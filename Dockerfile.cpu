@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────
+#  Velion — CPU Image
+#  Base: Python 3.11 slim (Debian Bookworm)
+#  NOTE: CPU inference is significantly slower than GPU.
+#        Reduce inference resolution in Settings for best
+#        performance. Recommended: 1–2 streams max.
+# ─────────────────────────────────────────────────────────
+FROM python:3.11-slim-bookworm
+
+LABEL maintainer="Velion"
+LABEL description="Velion AI Surveillance Platform — CPU edition (slow, for testing)"
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # OpenCV runtime deps
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1 \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    # FFmpeg for RTSP / video decoding
+    ffmpeg \
+    # Misc
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies (CPU-only torch)
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install -r requirements.txt
+
+# Copy application source
+COPY . .
+
+# Create runtime directories
+RUN mkdir -p models uploads exports recordings data
+
+# Expose Flask port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:5000/ || exit 1
+
+CMD ["python", "app.py"]

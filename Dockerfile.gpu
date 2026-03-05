@@ -1,0 +1,62 @@
+# ─────────────────────────────────────────────────────────
+#  Velion — GPU Image
+#  Base: CUDA 11.8 + cuDNN 8 + Ubuntu 22.04
+# ─────────────────────────────────────────────────────────
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+LABEL maintainer="Velion"
+LABEL description="Velion AI Surveillance Platform — GPU edition"
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    python3.11-venv \
+    # OpenCV runtime deps
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1 \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    # FFmpeg for RTSP / video decoding
+    ffmpeg \
+    # Misc
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3.11 the default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/python  python  /usr/bin/python3.11 1
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt .
+
+# Install PyTorch with CUDA 11.8 support first
+RUN pip install --upgrade pip && \
+    pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118 && \
+    pip install -r requirements.txt
+
+# Copy application source
+COPY . .
+
+# Create runtime directories
+RUN mkdir -p models uploads exports recordings data
+
+# Expose Flask port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:5000/ || exit 1
+
+CMD ["python", "app.py"]

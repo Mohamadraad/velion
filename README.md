@@ -12,7 +12,7 @@ Velion is an intelligent surveillance platform that uses pluggable computer visi
 
 ## Features
 
-- **Live stream monitoring** — connect up to 4 IP cameras via RTSP/HTTP simultaneously
+- **Live stream monitoring** — connect IP cameras via RTSP/HTTP or USB cameras (auto-detected)
 - **Video file analysis** — upload MP4, AVI, MOV, MKV files up to 500MB for retrospective analysis
 - **Pluggable AI models** — upload any YOLOv8/v9/v10, YOLOv5, or ONNX model; Velion auto-detects classes
 - **Incident detection** — configurable confidence thresholds, cooldown periods, and alert hold frames
@@ -29,7 +29,7 @@ Velion is an intelligent surveillance platform that uses pluggable computer visi
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/velion.git
+git clone https://github.com/Mohamadraad/velion.git
 cd velion
 ```
 
@@ -40,7 +40,16 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 ```
 
 ### 3. Install dependencies
+
+**CPU:**
 ```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt
+```
+
+**GPU (CUDA 11.8):**
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
 ```
 
@@ -60,11 +69,25 @@ Docker is the easiest way to run Velion. Everything is pre-configured — you do
 ### 1. Install Docker
 Download from [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
 
-### 2. Clone and start
+### 2. Clone the repository
 ```bash
 git clone https://github.com/Mohamadraad/velion.git
 cd velion
-docker compose up -d
+```
+
+### 3. Pick your version and start
+
+> ⚠️ **CPU mode is slow.** Recommended only for testing or low-FPS use cases (1–2 streams max). For real deployments, use the GPU version.
+
+**GPU (recommended):**
+```bash
+docker compose -f docker-compose.gpu.yml up -d --build
+```
+Requires an NVIDIA GPU + [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+
+**CPU:**
+```bash
+docker compose -f docker-compose.cpu.yml up -d --build
 ```
 
 Open **http://localhost:5000**. That's it.
@@ -72,39 +95,73 @@ Open **http://localhost:5000**. That's it.
 ### Useful Docker commands
 ```bash
 # See live logs
-docker compose logs -f
+docker compose -f docker-compose.gpu.yml logs -f
 
 # Stop Velion
-docker compose down
+docker compose -f docker-compose.gpu.yml down
 
 # Restart
-docker compose restart
+docker compose -f docker-compose.gpu.yml restart
 
 # Check if it's running
-docker compose ps
+docker compose -f docker-compose.gpu.yml ps
 ```
+
+---
+
+## USB Camera Support
+
+| Environment | USB cameras work? | Notes |
+|---|---|---|
+| `python app.py` on Linux | ✅ Yes | Native, no config needed |
+| `python app.py` on Windows | ✅ Yes | Native, no config needed |
+| `python app.py` on macOS | ✅ Yes | Native, no config needed |
+| Docker on **Linux host** | ✅ Yes | `privileged: true` already set in compose files |
+| Docker on **Windows** (Docker Desktop) | ⚠️ Extra step | See below |
+| Docker on **macOS** | ❌ Not supported | macOS doesn't expose USB to Docker at all |
+
+### Docker on Windows — USB camera setup
+
+Docker Desktop on Windows runs inside a WSL2 Linux VM, so USB devices aren't visible by default. Use Microsoft's `usbipd` tool to forward your camera into WSL2:
+
+```powershell
+# 1. Install usbipd (run PowerShell as Administrator)
+winget install usbipd
+
+# 2. List USB devices to find your camera's BUSID
+usbipd list
+
+# 3. Bind and attach your camera (replace 2-4 with your actual BUSID)
+usbipd bind --busid 2-4
+usbipd attach --wsl --busid 2-4
+```
+
+Then restart the container — click **Scan Cameras** in the dashboard and your camera will appear.
+
+> **Note:** You need to re-run `usbipd attach` every time you reboot or replug the camera.
+
+### Alternative — use your camera as an IP stream
+
+Apps like [DroidCam](https://www.dev47apps.com/) (Android/iOS) or [IP Webcam](https://play.google.com/store/apps/details?id=com.pas.webcam) expose any camera as an RTSP/HTTP stream. Use the **URL / RTSP** tab in Velion — works through Docker on any OS with no extra setup.
 
 ---
 
 ## Updating Velion (Docker)
 
-When you change code or add new features, update with **two commands**:
+When a new version is released, update with two commands:
 
 ```bash
-# 1. Pull latest code (or just edit your files locally)
 git pull
-
-# 2. Rebuild the image and restart the container
-docker compose up -d --build
+docker compose -f docker-compose.gpu.yml up -d --build
 ```
 
-Your data (models, recordings, uploads, settings) lives in folders on your **host machine** (`./models`, `./recordings`, etc.) — they are mounted as volumes and **never wiped** during a rebuild. Only the application code gets updated.
+Your data (models, recordings, uploads, settings) is stored in Docker named volumes and is **never wiped** during a rebuild. Only the application code gets updated.
 
 ### When do you need to rebuild?
 | Change | Need rebuild? |
 |--------|--------------|
-| Edit Python files (`.py`) | Yes — `docker compose up -d --build` |
-| Edit HTML/JS/CSS templates | Yes — `docker compose up -d --build` |
+| Pull new code (`git pull`) | Yes — `docker compose up -d --build` |
+| Edit Python / HTML / JS files | Yes — `docker compose up -d --build` |
 | Add a new pip package to `requirements.txt` | Yes — `docker compose up -d --build` |
 | Upload a new AI model via the UI | **No** — volumes are live |
 | Change settings in the UI | **No** — saved to `data/` volume |
@@ -119,17 +176,18 @@ velion/
 ├── app.py                  # Flask app, all API routes
 ├── config.py               # All constants and thresholds
 ├── detection.py            # Model loading + inference engine
-├── stream_manager.py       # Live RTSP/HTTP stream workers
+├── stream_manager.py       # Live RTSP/HTTP/USB stream workers
 ├── stream_persistence.py   # Save/restore stream config on restart
 ├── analysis_jobs.py        # Uploaded video analysis workers
 ├── recorder.py             # Per-camera recording with segment rotation
 ├── settings_store.py       # Persistent settings & model metadata
+├── utils.py                # File and URL validation helpers
 ├── templates/
 │   ├── base.html           # Shared layout & sidebar
 │   ├── index.html          # Overview / landing page
-│   ├── dashboard.html      # Live monitor (4-camera grid)
+│   ├── dashboard.html      # Live monitor (camera grid)
 │   ├── upload.html         # Video upload & analysis
-│   ├── models.html         # Model management
+│   ├── models.html         # Model management & settings
 │   ├── recordings.html     # Recording browser
 │   ├── analytics.html      # Analytics dashboard
 │   └── 404.html
@@ -141,8 +199,10 @@ velion/
 ├── exports/                # Annotated video exports (gitignored)
 ├── recordings/             # Camera recordings (gitignored)
 ├── data/                   # App state & settings (gitignored)
-├── Dockerfile
-├── docker-compose.yml
+├── Dockerfile.gpu
+├── Dockerfile.cpu
+├── docker-compose.gpu.yml
+├── docker-compose.cpu.yml
 └── requirements.txt
 ```
 
@@ -160,7 +220,7 @@ Key settings are in `config.py`:
 | `STREAM_FPS` | 15 | Streaming frame rate |
 | `MAX_CONTENT_LENGTH` | 500 MB | Max upload size |
 
-Runtime settings (confidence, retention days, etc.) are also configurable through the Settings UI and saved to `data/settings.json`.
+Runtime settings (confidence, resolution, retention days, etc.) are also configurable through the Settings UI and saved to `data/settings.json`.
 
 ---
 
@@ -173,18 +233,7 @@ Runtime settings (confidence, retention days, etc.) are also configurable throug
 | ONNX (with metadata) | ✅ Full |
 | YAML sidecar (`.yaml` next to `.pt`) | ✅ Fallback |
 
-Upload models via the **Models** page. Velion auto-detects class names.
-
----
-
-## GPU Support
-
-By default Velion runs on CPU. For GPU inference:
-
-1. Uncomment the `nvidia` deploy block in `docker-compose.yml`
-2. Swap the base image in `Dockerfile` to the CUDA image (instructions in the file)
-3. Install [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-4. Rebuild: `docker compose up -d --build`
+Upload models via the **Models** page. Velion auto-detects class names. If detection fails (older custom models), you can enter class names manually in the UI.
 
 ---
 
@@ -201,7 +250,7 @@ By default Velion runs on CPU. For GPU inference:
 
 ## Author
 
-Built by [Mohamad Raad](https://github.com/YOUR_USERNAME)
+Built by [Mohamad Raad](https://github.com/Mohamadraad)
 
 ---
 

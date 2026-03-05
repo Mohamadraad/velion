@@ -1,0 +1,588 @@
+{% extends "base.html" %}
+{% block title %}Models — Velion{% endblock %}
+{% block page_title %}Models{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/models.css">
+{% endblock %}
+{% block content %}
+<div class="models-page">
+
+  <!-- ── PAGE HEADER ── -->
+  <div class="models-hero">
+    <div class="models-hero-left">
+      <div class="models-eyebrow"><span class="eyebrow-dot"></span>Detection Engine</div>
+      <h1 class="models-headline">Models</h1>
+      <p class="models-desc">Upload, configure, and tune your AI detection models.</p>
+    </div>
+    <div class="models-hero-actions" id="heroActions">
+    </div>
+  </div>
+
+  <!-- ── SYSTEM STATUS BANNER ── -->
+  <div class="sys-status-card">
+    <div class="sys-status-grid">
+      <div class="sys-stat">
+        <div class="sys-stat-head">
+          <span class="sys-stat-icon sys-stat-icon--cyan">
+            <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+              <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="sys-stat-label">Compute</span>
+        </div>
+        <span class="sys-stat-value" id="sysDevice">—</span>
+      </div>
+      <div class="sys-stat">
+        <div class="sys-stat-head">
+          <span class="sys-stat-icon sys-stat-icon--amber">
+            <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="5" y1="8" x2="19" y2="8" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="5" y1="16" x2="19" y2="16" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </span>
+          <span class="sys-stat-label">Hardware</span>
+        </div>
+        <span class="sys-stat-value" id="sysHardware">—</span>
+      </div>
+      <div class="sys-stat sys-stat--models">
+        <div class="sys-stat-head">
+          <span class="sys-stat-icon sys-stat-icon--green">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+            <polygon points="10,8 16,12 10,16" fill="currentColor"/>
+          </svg>
+          </span>
+          <span class="sys-stat-label">Active Models</span>
+        </div>
+        <div class="sys-model-list" id="modelStatusBanner">
+          <span class="sys-scanning">Scanning…</span>
+        </div>
+      </div>
+      <div class="sys-stat">
+        <div class="sys-stat-head">
+          <span class="sys-stat-icon sys-stat-icon--green">
+            <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+              <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 12l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="sys-stat-label">Status</span>
+        </div>
+        <span class="sys-stat-value">
+          <span class="sys-online-dot"></span>
+          Online
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB BAR ── -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabLibrary" onclick="switchTab('library')">
+      <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+        <rect x="3" y="4" width="14" height="3" rx="1"
+              stroke="currentColor" stroke-width="1.4"/>
+        <rect x="3" y="9" width="14" height="3" rx="1"
+              stroke="currentColor" stroke-width="1.4"/>
+        <rect x="3" y="14" width="14" height="3" rx="1"
+              stroke="currentColor" stroke-width="1.4"/>
+      </svg>
+      Library
+      <span class="tab-count" id="tabLibraryCount">—</span>
+    </button>
+    <button class="tab-btn" id="tabTuning" onclick="switchTab('tuning')">
+      <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+        <line x1="3" y1="5" x2="17" y2="5"
+              stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="8" cy="5" r="2"
+                stroke="currentColor" stroke-width="1.4"/>
+
+        <line x1="3" y1="10" x2="17" y2="10"
+              stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="13" cy="10" r="2"
+                stroke="currentColor" stroke-width="1.4"/>
+
+        <line x1="3" y1="15" x2="17" y2="15"
+              stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="10" cy="15" r="2"
+                stroke="currentColor" stroke-width="1.4"/>
+      </svg>
+      Tuning
+      <span class="tab-badge-adv">Advanced</span>
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB: LIBRARY
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panelLibrary">
+
+    <section class="lib-card">
+      <div class="lib-card-header">
+        <div class="lib-header-text">
+          <h2 class="lib-title">Model Library</h2>
+          <p class="lib-desc">Upload any Ultralytics-compatible <code>.pt</code> or <code>.onnx</code> model, then configure which classes draw bounding boxes and which trigger alerts. Multiple models can run simultaneously.</p>
+        </div>
+        <button class="btn-upload-model" onclick="openUploadModal()">
+          <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+            <path d="M8 2v9M4 5l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Upload Model
+        </button>
+      </div>
+
+      <input type="file" id="modelFileInput" accept=".pt,.onnx" hidden />
+
+      <div class="model-drop-zone" id="modelDropZone">
+        <div class="mdz-inner">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="flex-shrink:0;color:var(--text-muted);">
+            <path d="M12 4v12M8 8l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 18h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="mdz-text">Drop a <code>.pt</code> or <code>.onnx</code> file here, or <span class="mdz-link" onclick="openUploadModal()">browse</span></span>
+          <span class="mdz-sub">Max 500 MB · YOLOv8 / Ultralytics compatible</span>
+        </div>
+      </div>
+
+      <div class="model-grid" id="modelGrid">
+        <div class="model-grid-loading">
+          <div class="loading-pulse"></div>
+          <span>Loading models…</span>
+        </div>
+      </div>
+
+      <div class="slot-legend">
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#22c55e;"></span>
+          <strong>Active</strong>&nbsp;— model runs on every frame, drawing and alerting per class configuration.
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#e84545;"></span>
+          <strong>Alert classes</strong>&nbsp;— when detected, trigger the incident state machine and overlay alert.
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB: TUNING
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel hidden" id="panelTuning">
+
+    <!-- Tuning header with save/reset buttons -->
+    <div class="tuning-header">
+      <div class="tuning-header-left">
+        <div class="tuning-eyebrow">
+          <svg viewBox="0 0 16 16" fill="none" width="11" height="11">
+            <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          Advanced Parameters
+        </div>
+        <p class="tuning-desc">These defaults work for most setups. Only change if you're seeing too many false positives or missed detections.</p>
+      </div>
+      <div class="tuning-actions">
+        <button class="btn-reset-all" onclick="resetAll()">
+          <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><path d="M4 10a6 6 0 1 0 1.1-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M4 5.5V10h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Reset Defaults
+        </button>
+        <button class="btn-save-all" id="btnSaveAll" onclick="saveAll()" disabled>
+          <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><path d="M3 10l5 5 9-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Apply Changes
+        </button>
+      </div>
+    </div>
+<br>
+    <!-- Detection Confidence -->
+    <div class="tuning-grid">
+
+      <section class="settings-card">
+        <div class="card-header">
+          <div class="card-icon card-icon--cyan">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h2 class="card-title">Confidence Thresholds</h2>
+            <p class="card-desc">Minimum detection score. Higher = fewer false positives.</p>
+          </div>
+        </div>
+        <div class="settings-fields">
+          <div class="field-group">
+            <div class="field-label-row">
+              <label class="field-label" for="general_conf">Detection Confidence</label>
+              <span class="field-badge" id="badge_general_conf">0.40</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" class="velion-slider" id="general_conf" min="0.05" max="0.95" step="0.01" value="0.40" oninput="onSlider('general_conf', this.value)" />
+              <div class="slider-ticks"><span>0.05</span><span>0.25</span><span>0.50</span><span>0.75</span><span>0.95</span></div>
+            </div>
+            <p class="field-hint">Recommended: 0.35–0.55. Applies to all active models.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-card">
+        <div class="card-header">
+          <div class="card-icon card-icon--amber">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <h2 class="card-title">Inference Resolution</h2>
+            <p class="card-desc">Frame size fed to models. Larger = more accurate but slower.</p>
+          </div>
+        </div>
+        <div class="settings-fields">
+          <div class="field-group">
+            <label class="field-label">GPU Resolution (CUDA)</label>
+            <div class="resolution-row">
+              <div class="res-pair"><span class="res-axis">W</span><div class="number-input-wrap"><input type="number" class="velion-number" id="infer_w_gpu" min="128" max="1280" step="32" value="640" oninput="onNumber('infer_w_gpu', this.value)"/><span class="number-unit">px</span></div></div>
+              <span class="res-x">×</span>
+              <div class="res-pair"><span class="res-axis">H</span><div class="number-input-wrap"><input type="number" class="velion-number" id="infer_h_gpu" min="128" max="1280" step="32" value="640" oninput="onNumber('infer_h_gpu', this.value)"/><span class="number-unit">px</span></div></div>
+              <div class="res-presets"><button class="preset-btn" onclick="setResGpu(320,320)">320</button><button class="preset-btn" onclick="setResGpu(480,480)">480</button><button class="preset-btn" onclick="setResGpu(640,640)">640</button><button class="preset-btn" onclick="setResGpu(960,960)">960</button></div>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">CPU Resolution</label>
+            <div class="resolution-row">
+              <div class="res-pair"><span class="res-axis">W</span><div class="number-input-wrap"><input type="number" class="velion-number" id="infer_w_cpu" min="128" max="960" step="32" value="480" oninput="onNumber('infer_w_cpu', this.value)"/><span class="number-unit">px</span></div></div>
+              <span class="res-x">×</span>
+              <div class="res-pair"><span class="res-axis">H</span><div class="number-input-wrap"><input type="number" class="velion-number" id="infer_h_cpu" min="128" max="960" step="32" value="480" oninput="onNumber('infer_h_cpu', this.value)"/><span class="number-unit">px</span></div></div>
+              <div class="res-presets"><button class="preset-btn" onclick="setResCpu(256,256)">256</button><button class="preset-btn" onclick="setResCpu(320,320)">320</button><button class="preset-btn" onclick="setResCpu(480,480)">480</button><button class="preset-btn" onclick="setResCpu(640,640)">640</button></div>
+            </div>
+            <p class="field-hint">Recommended: 320×320 for weak CPUs.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-card settings-card--full">
+        <div class="card-header">
+          <div class="card-icon card-icon--red">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <h2 class="card-title">Event State Machine</h2>
+            <p class="card-desc">Controls how alert-class detections become confirmed incidents and how long alerts persist. Use the unit toggle to work in frames or seconds (at 30 FPS max).</p>
+          </div>
+        </div>
+        <div class="state-machine-grid">
+
+          <div class="field-group sm-field">
+            <div class="field-label-row">
+              <label class="field-label">Confirm Threshold</label>
+              <div class="unit-toggle-group">
+                <button class="unit-btn active" id="unit_confirm_frames_frames" onclick="setSmUnit('confirm_frames','frames')">frames</button>
+                <button class="unit-btn"        id="unit_confirm_frames_seconds" onclick="setSmUnit('confirm_frames','seconds')">sec</button>
+              </div>
+              <span class="field-badge" id="badge_confirm_frames">4 fr</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" class="velion-slider" id="confirm_frames" min="1" max="30" step="1" value="4" oninput="onSmSlider('confirm_frames', this.value)" />
+              <div class="slider-ticks" id="ticks_confirm_frames"><span>1</span><span>8</span><span>15</span><span>22</span><span>30</span></div>
+            </div>
+            <p class="field-hint" id="hint_confirm_frames">Consecutive frames with an alert-class detection before confirming an incident. At 30 FPS, 30 frames = 1 sec.</p>
+          </div>
+
+          <div class="field-group sm-field">
+            <div class="field-label-row">
+              <label class="field-label">Miss Reset</label>
+              <div class="unit-toggle-group">
+                <button class="unit-btn active" id="unit_miss_reset_frames_frames" onclick="setSmUnit('miss_reset_frames','frames')">frames</button>
+                <button class="unit-btn"        id="unit_miss_reset_frames_seconds" onclick="setSmUnit('miss_reset_frames','seconds')">sec</button>
+              </div>
+              <span class="field-badge" id="badge_miss_reset_frames">1 fr</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" class="velion-slider" id="miss_reset_frames" min="1" max="60" step="1" value="1" oninput="onSmSlider('miss_reset_frames', this.value)" />
+              <div class="slider-ticks" id="ticks_miss_reset_frames"><span>1</span><span>15</span><span>30</span><span>45</span><span>60</span></div>
+            </div>
+            <p class="field-hint" id="hint_miss_reset_frames">Consecutive missed frames before resetting the detection streak.</p>
+          </div>
+
+          <div class="field-group sm-field">
+            <div class="field-label-row">
+              <label class="field-label">Alert Hold</label>
+              <div class="unit-toggle-group">
+                <button class="unit-btn active" id="unit_alert_hold_frames_frames"  onclick="setSmUnit('alert_hold_frames','frames')">frames</button>
+                <button class="unit-btn"        id="unit_alert_hold_frames_seconds" onclick="setSmUnit('alert_hold_frames','seconds')">sec</button>
+              </div>
+              <span class="field-badge" id="badge_alert_hold_frames">150 fr</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" class="velion-slider" id="alert_hold_frames" min="1" max="500" step="1" value="150" oninput="onSmSlider('alert_hold_frames', this.value)" />
+              <div class="slider-ticks" id="ticks_alert_hold_frames"><span>1</span><span>125</span><span>250</span><span>375</span><span>500</span></div>
+            </div>
+            <p class="field-hint" id="hint_alert_hold_frames">How long the alert overlay stays active after confirmation. At 30 FPS, 150 fr ≈ 5 sec.</p>
+          </div>
+
+          <div class="field-group sm-field">
+            <div class="field-label-row">
+              <label class="field-label">Incident Cooldown</label>
+              <div class="unit-toggle-group">
+                <button class="unit-btn"        id="unit_incident_cooldown_sec_seconds" onclick="setSmUnit('incident_cooldown_sec','seconds')">sec</button>
+                <button class="unit-btn active" id="unit_incident_cooldown_sec_minutes" onclick="setSmUnit('incident_cooldown_sec','minutes')">min</button>
+              </div>
+              <span class="field-badge field-badge--red" id="badge_incident_cooldown_sec">15 min</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" class="velion-slider velion-slider--red" id="incident_cooldown_sec" min="0" max="60" step="1" value="15" oninput="onSmSlider('incident_cooldown_sec', this.value)" />
+              <div class="slider-ticks" id="ticks_incident_cooldown_sec"><span>0</span><span>15</span><span>30</span><span>45</span><span>60</span></div>
+            </div>
+            <p class="field-hint" id="hint_incident_cooldown_sec">Minimum time between two separate incidents on the same camera.</p>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+    <div class="unsaved-bar hidden" id="unsavedBar">
+      <div class="unsaved-dot"></div>
+      <span>You have unsaved changes</span>
+      <button class="unsaved-discard" onclick="discardChanges()">Discard</button>
+      <button class="unsaved-apply"   onclick="saveAll()">Apply Now</button>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     UPLOAD MODAL — Step 1: metadata
+═══════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop hidden" id="uploadModalBackdrop">
+  <div class="upload-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+            <path d="M12 4v12M8 8l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 18h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title" id="modalTitle">Upload Model</h2>
+          <p class="modal-subtitle">Step 1 of 2 — describe your model</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeUploadModal()" aria-label="Close">
+        <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-file-strip">
+      <div class="modal-file-icon"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="2" y="7" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M18 10l4-2v8l-4-2" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+      <span class="modal-file-name" id="modalFilename">model.onnx</span>
+      <span class="modal-file-ext"  id="modalFileext">ONNX</span>
+      <span class="modal-file-size" id="modalFilesize">—</span>
+    </div>
+    <div class="modal-body">
+      <div class="mf-group">
+        <label class="mf-label" for="fieldDisplayName">Model Name <span class="mf-required">required</span></label>
+        <input type="text" id="fieldDisplayName" class="mf-input" placeholder="e.g. PPE Safety v2, Road Accident Detector" maxlength="80" autocomplete="off" />
+      </div>
+      <div class="mf-group">
+        <label class="mf-label" for="fieldDescription">Description <span class="mf-required">required</span><span class="mf-char-counter" id="descCounter">0/200</span></label>
+        <textarea id="fieldDescription" class="mf-textarea" placeholder="What does this model detect? Where was it trained?" maxlength="200" rows="3"></textarea>
+      </div>
+      <div class="mf-group">
+        <div class="mf-arch-toggle">
+          <label class="mf-label" style="margin:0;">Architecture</label>
+          <label class="mf-checkbox-row">
+            <input type="checkbox" id="archKnown" />
+            <span class="mf-checkbox-label">I know the architecture</span>
+          </label>
+        </div>
+        <div id="archFieldWrap" class="hidden" style="margin-top:8px;">
+          <input type="text" id="fieldArchitecture" class="mf-input" placeholder="e.g. YOLOv8 Nano, YOLOv9s" maxlength="60" autocomplete="off" />
+        </div>
+      </div>
+      <div class="modal-error" id="modalError" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel-btn" onclick="closeUploadModal()">Cancel</button>
+      <button class="modal-submit-btn" id="modalSubmitBtn" onclick="submitModelUpload()">
+        <span id="modalSpinner" class="modal-spinner" style="display:none;"></span>
+        <span id="modalBtnText">Upload &amp; Configure Classes →</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     CLASS CONFIG MODAL — Step 2
+═══════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop hidden" id="classConfigBackdrop">
+  <div class="class-config-modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon" style="background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3);color:var(--cyan);">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+            <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title" id="ccTitle">Configure Classes</h2>
+          <p class="modal-subtitle" id="ccSubtitle">Step 2 of 2 — define what to draw and what triggers alerts</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeClassConfig()" aria-label="Close">
+        <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="cc-scan-state" id="ccScanState">
+      <div class="cc-scan-spinner"></div>
+      <span id="ccScanMsg">Inspecting model classes…</span>
+    </div>
+    <div class="cc-body hidden" id="ccBody">
+      <div class="cc-top-row">
+        <div class="cc-active-toggle">
+          <label class="cc-toggle-label">
+            <input type="checkbox" id="ccActive" class="cc-toggle-input" />
+            <span class="cc-toggle-track"><span class="cc-toggle-thumb"></span></span>
+            <span class="cc-toggle-text">
+              <strong id="ccActiveLabel">Inactive</strong>
+              <span id="ccActiveDesc">Model will not run on streams or video</span>
+            </span>
+          </label>
+        </div>
+        <div class="cc-alert-label-wrap">
+          <label class="mf-label" style="white-space:nowrap;">Alert Event Name</label>
+          <input type="text" id="ccAlertLabel" class="mf-input" style="width:200px;" value="Alert" placeholder="e.g. Accident, Fall, PPE Violation" maxlength="40" />
+          <span class="cc-alert-hint">Name shown in the UI when an alert class is detected</span>
+        </div>
+      </div>
+      <div class="cc-no-classes hidden" id="ccNoClasses">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="color:var(--amber);flex-shrink:0;">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <strong style="color:var(--text-primary);">Could not detect classes automatically.</strong>
+          <p style="color:var(--text-muted);font-size:.78rem;margin-top:4px;">Use the <em>Add Class</em> button to add them manually.</p>
+        </div>
+      </div>
+      <div class="cc-table-header">
+        <span class="cc-col-id">ID</span>
+        <span class="cc-col-name">Class Name</span>
+        <span class="cc-col-draw">
+          <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4 8l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Draw
+          <button class="cc-toggle-all" onclick="ccToggleAll('draw')" title="Select / deselect all Draw">all</button>
+        </span>
+        <span class="cc-col-alert">
+          <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><path d="M8 2l6 10H2L8 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><line x1="8" y1="7" x2="8" y2="9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".7" fill="currentColor"/></svg>
+          Triggers Alert
+          <button class="cc-toggle-all" onclick="ccToggleAll('alert')" title="Select / deselect all Alert">all</button>
+        </span>
+        <span class="cc-col-del"></span>
+      </div>
+      <div class="cc-class-list" id="ccClassList"></div>
+      <button class="cc-add-btn" onclick="ccAddManualRow()">
+        <svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Add Class Manually
+      </button>
+      <div class="cc-legend">
+        <div class="cc-legend-item"><span class="cc-legend-dot" style="background:var(--cyan);"></span><strong>Draw</strong>&nbsp;— bounding box visible on screen for this class.</div>
+        <div class="cc-legend-item"><span class="cc-legend-dot" style="background:#e84545;"></span><strong>Triggers Alert</strong>&nbsp;— when detected, starts the incident confirmation timer.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel-btn" onclick="closeClassConfig()">Cancel</button>
+      <button class="modal-submit-btn" id="ccSaveBtn" onclick="saveClassConfig()">
+        <span id="ccSaveSpinner" class="modal-spinner" style="display:none;"></span>
+        Save Configuration
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     DELETE MODAL
+═══════════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop hidden" id="deleteModalBackdrop">
+  <div class="delete-modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon" style="background:rgba(232,69,69,.12);border-color:rgba(232,69,69,.3);color:#e84545;">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+            <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">Delete Model</h2>
+          <p class="modal-subtitle">This action cannot be undone</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeDeleteModal()" aria-label="Close">
+        <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="delete-modal-body">
+      <div class="delete-modal-warning">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="flex-shrink:0;color:#f59e0b;">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>You are about to permanently delete:</span>
+      </div>
+      <div class="delete-modal-target">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0;color:var(--text-muted);">
+          <rect x="2" y="7" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M18 10l4-2v8l-4-2" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          <circle cx="10" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        <div>
+          <div class="delete-modal-name" id="deleteModalName">—</div>
+          <div class="delete-modal-file" id="deleteModalFile">—</div>
+        </div>
+      </div>
+      <p class="delete-modal-desc">The model file and all class configurations will be removed from Velion. Any active detections using this model will stop immediately.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel-btn" onclick="closeDeleteModal()">Cancel</button>
+      <button class="delete-confirm-btn" id="deleteConfirmBtn" onclick="confirmDelete()">
+        <span id="deleteSpinner" class="modal-spinner" style="display:none;"></span>
+        <svg id="deleteIcon" viewBox="0 0 16 16" fill="none" width="13" height="13">
+          <path d="M2 4h12M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M6 7v5M10 7v5M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Delete Model
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let _activeTab = 'library';
+
+function switchTab(tab) {
+  _activeTab = tab;
+
+  document.getElementById('tabLibrary').classList.toggle('active', tab === 'library');
+  document.getElementById('tabTuning').classList.toggle('active', tab === 'tuning');
+
+  document.getElementById('panelLibrary').classList.toggle('hidden', tab !== 'library');
+  document.getElementById('panelTuning').classList.toggle('hidden', tab !== 'tuning');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash.replace('#', '');
+  if (hash === 'tuning' || hash === 'library') {
+    switchTab(hash);
+  }
+});
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

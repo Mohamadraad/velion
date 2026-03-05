@@ -1,0 +1,1031 @@
+{% extends "base.html" %}
+{% block title %}Analytics — Velion{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="analytics-page">
+
+  <div class="analytics-hero">
+    <div>
+      <div class="analytics-eyebrow"><span class="eyebrow-dot"></span>Computer Vision Analytics</div>
+      <h1 class="analytics-headline">Analytics <span class="analytics-accent">Studio</span></h1>
+      <p class="analytics-desc">Configure object counting across live streams. Add models, assign cameras per model, then activate — results appear live on the stream page.</p>
+    </div>
+  </div>
+
+  <div class="capability-bar">
+    <button class="cap-tab active" data-cap="count" onclick="switchCap('count')">
+      <span class="cap-tab-icon">
+        <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+          <rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+      </span>
+      <span class="cap-tab-label">Object Count</span>
+      <span class="cap-tab-badge cap-active-badge">Active</span>
+    </button>
+    <button class="cap-tab cap-tab--soon" data-cap="track">
+      <span class="cap-tab-icon"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M4 10C4 6.686 6.686 4 10 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M16 10C16 13.314 13.314 16 10 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M10 1v2M10 17v2M1 10h2M17 10h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+      <span class="cap-tab-label">Object Tracking</span>
+      <span class="cap-tab-badge cap-soon-badge">Soon</span>
+    </button>
+    <button class="cap-tab cap-tab--soon" data-cap="line">
+      <span class="cap-tab-icon"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 17L17 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="13" cy="13" r="2" stroke="currentColor" stroke-width="1.3"/></svg></span>
+      <span class="cap-tab-label">Line Crossing</span>
+      <span class="cap-tab-badge cap-soon-badge">Soon</span>
+    </button>
+    <button class="cap-tab cap-tab--soon" data-cap="zone">
+      <span class="cap-tab-icon"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 7l7-4 7 4v6l-7 4-7-4V7z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 3v14M3 7l7 4 7-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="cap-tab-label">Zone Analytics</span>
+      <span class="cap-tab-badge cap-soon-badge">Soon</span>
+    </button>
+    <button class="cap-tab cap-tab--soon" data-cap="heatmap">
+      <span class="cap-tab-icon"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="5" stroke="currentColor" stroke-width="1.2" opacity=".6"/><circle cx="10" cy="10" r="2" fill="currentColor" opacity=".8"/></svg></span>
+      <span class="cap-tab-label">Heatmap</span>
+      <span class="cap-tab-badge cap-soon-badge">Soon</span>
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       COUNT PANEL
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="cap-panel" id="panel-count">
+    <div class="cap-layout">
+
+      <!-- ─────────────────── LEFT: Config ─────────────────── -->
+      <div class="cap-config-col">
+
+        <div class="config-card">
+          <div class="config-card-header">
+            <div class="config-card-icon config-icon--purple">
+              <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><rect x="1" y="5" width="13" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M14 8l5-2v8l-5-2" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="7.5" cy="10" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+            </div>
+            <div style="flex:1;">
+              <h3 class="config-card-title">Count Models</h3>
+              <p class="config-card-desc">Each model targets specific cameras and classes</p>
+            </div>
+          </div>
+
+          <div id="modelSlots"></div>
+
+          <button class="btn-add-model" onclick="addModelSlot()">
+            <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Add Model
+          </button>
+
+          <p class="field-hint">
+            Connect cameras first on the <a href="/dashboard" class="hint-link">Live Streams</a> page.
+          </p>
+        </div>
+
+        <button class="btn-activate" id="btnActivate" onclick="toggleActivate()">
+          <span class="activate-indicator" id="activateIndicator"></span>
+          <span id="activateLabel">Activate Counting</span>
+        </button>
+
+        <p class="activate-hint" id="activateHint">
+          Once active, count overlays appear on the <a href="/dashboard" class="hint-link">Live Streams</a> page.
+        </p>
+
+      </div>
+
+      <!-- ─────────────────── RIGHT: Live Results ─────────────────── -->
+      <div class="cap-results-col">
+
+        <div class="results-header">
+          <div class="results-status-row">
+            <span class="results-status-dot" id="resultsDot"></span>
+            <span class="results-status-text" id="resultsLabel">Idle — configure models and cameras, then activate</span>
+          </div>
+          <button class="btn-export-csv" id="btnExport" onclick="exportCsv()" style="display:none;">
+            <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Export CSV
+          </button>
+        </div>
+
+        <!-- Empty state -->
+        <div class="results-empty" id="resultsEmpty">
+          <div class="results-empty-icon">
+            <svg viewBox="0 0 80 80" fill="none" width="68" height="68">
+              <rect x="8" y="8" width="28" height="28" rx="4" stroke="currentColor" stroke-width="1.2" opacity=".2"/>
+              <rect x="44" y="8" width="28" height="28" rx="4" stroke="currentColor" stroke-width="1.2" opacity=".2"/>
+              <rect x="8" y="44" width="28" height="28" rx="4" stroke="currentColor" stroke-width="1.2" opacity=".2"/>
+              <rect x="44" y="44" width="28" height="28" rx="4" stroke="currentColor" stroke-width="1.2" opacity=".2"/>
+            </svg>
+          </div>
+          <p class="results-empty-title">No Analysis Running</p>
+          <p class="results-empty-sub">Add models, assign cameras per model, then press Activate Counting.</p>
+        </div>
+
+        <!-- Active results: one card per stream -->
+        <div id="resultsContainer" style="display:none; flex-direction:column; gap:0;"></div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Coming soon panels -->
+  <div class="cap-panel hidden" id="panel-track"><div class="soon-panel"><div class="soon-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><h2>Object Tracking</h2><p>Assign unique IDs and follow trajectories. ByteTrack, DeepSORT, or BoT-SORT.</p><div class="soon-tags"><span>Unique IDs</span><span>Trajectories</span><span>Re-ID</span><span>Speed</span></div></div></div>
+  <div class="cap-panel hidden" id="panel-line"><div class="soon-panel"><div class="soon-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M4 20L20 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="16" cy="16" r="2.5" stroke="currentColor" stroke-width="1.4"/></svg></div><h2>Line Crossing Counter</h2><p>Draw a virtual line and count objects crossing in each direction.</p><div class="soon-tags"><span>Virtual lines</span><span>Directional</span><span>Per-class</span><span>Entry/Exit</span></div></div></div>
+  <div class="cap-panel hidden" id="panel-zone"><div class="soon-panel"><div class="soon-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div><h2>Zone Analytics</h2><p>Define polygon zones, get dwell time, occupancy and alerts.</p><div class="soon-tags"><span>Polygon zones</span><span>Dwell time</span><span>Occupancy</span><span>Alerts</span></div></div></div>
+  <div class="cap-panel hidden" id="panel-heatmap"><div class="soon-panel"><div class="soon-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.3" opacity=".6"/><circle cx="12" cy="12" r="2.5" fill="currentColor" opacity=".9"/></svg></div><h2>Movement Heatmap</h2><p>Color-coded density overlay showing where objects spend the most time.</p><div class="soon-tags"><span>Density map</span><span>Time-weighted</span><span>Export</span><span>Per-class</span></div></div></div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     STYLES
+════════════════════════════════════════════════════════════ -->
+<style>
+.analytics-page { display:flex;flex-direction:column;gap:24px;padding-bottom:60px; }
+
+/* Hero */
+.analytics-hero { display:flex;align-items:flex-start;flex-wrap:wrap;gap:16px; }
+.analytics-eyebrow { display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px; }
+.eyebrow-dot { width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:edot 1.8s infinite; }
+@keyframes edot{0%,100%{opacity:1}50%{opacity:.3}}
+.analytics-headline { font-size:clamp(1.6rem,2.5vw,2.2rem);font-weight:800;color:var(--text-primary);margin-bottom:8px;line-height:1.1; }
+.analytics-accent { background:linear-gradient(90deg,var(--cyan),rgba(34,211,238,.5));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+.analytics-desc { font-size:.85rem;color:var(--text-secondary);max-width:560px;line-height:1.6; }
+
+/* Cap bar */
+.capability-bar { display:flex;gap:8px;flex-wrap:wrap;padding:16px 20px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg); }
+.cap-tab { display:flex;align-items:center;gap:9px;padding:9px 16px;border:1px solid var(--border);background:transparent;color:var(--text-muted);border-radius:9px;font-family:var(--font-mono);font-size:.72rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:all .18s; }
+.cap-tab:hover:not(.cap-tab--soon) { border-color:var(--border-light);color:var(--text-secondary);background:rgba(255,255,255,.04); }
+.cap-tab.active { background:rgba(34,211,238,.08);border-color:rgba(34,211,238,.35);color:var(--cyan); }
+.cap-tab--soon { opacity:.5;cursor:default; }
+.cap-tab-icon { display:flex;align-items:center; }
+.cap-tab-badge { font-size:.6rem;padding:1px 7px;border-radius:99px;font-family:var(--font-mono);font-weight:700;letter-spacing:.06em;text-transform:uppercase; }
+.cap-active-badge { background:rgba(34,211,238,.15);border:1px solid rgba(34,211,238,.3);color:var(--cyan); }
+.cap-soon-badge { background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text-muted); }
+
+/* Panel */
+.cap-panel { animation:panelIn .22s cubic-bezier(.16,1,.3,1); }
+@keyframes panelIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cap-layout { display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start; }
+.cap-config-col { display:flex;flex-direction:column;gap:14px; }
+
+/* Config cards */
+.config-card { background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;display:flex;flex-direction:column;gap:14px; }
+.config-card-header { display:flex;align-items:flex-start;gap:12px; }
+.config-card-icon { width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid; }
+.config-icon--cyan { background:rgba(34,211,238,.08);border-color:rgba(34,211,238,.2);color:var(--cyan); }
+.config-icon--purple { background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.2);color:#a78bfa; }
+.config-card-title { font-size:.9rem;font-weight:700;color:var(--text-primary);margin-bottom:3px; }
+.config-card-desc { font-size:.75rem;color:var(--text-muted); }
+
+/* Field hint */
+.field-hint { font-size:.7rem;color:var(--text-muted);line-height:1.5; }
+.hint-link { color:var(--cyan);text-decoration:none; }
+.hint-link:hover { text-decoration:underline; }
+
+/* ══════════════════════════════════════════════════════════════
+   MODEL SLOT  — now self-contained with camera + overlay config
+══════════════════════════════════════════════════════════════ */
+.model-slot { border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg-elevated);margin-bottom:10px;animation:panelIn .2s ease; }
+.model-slot-head { display:flex;align-items:center;gap:9px;padding:10px 14px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--border); }
+.model-slot-num { font-family:var(--font-mono);font-size:.6rem;font-weight:700;letter-spacing:.1em;color:var(--text-muted);background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:4px;padding:2px 8px;flex-shrink:0; }
+.model-slot-name { font-family:var(--font-mono);font-size:.72rem;color:var(--text-muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.btn-remove-slot { margin-left:auto;width:24px;height:24px;border-radius:5px;background:transparent;border:1px solid var(--border);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;flex-shrink:0; }
+.btn-remove-slot:hover { background:rgba(232,69,69,.1);border-color:rgba(232,69,69,.4);color:var(--accent); }
+.model-slot-body { padding:14px;display:flex;flex-direction:column;gap:12px; }
+
+/* Section label inside slot */
+.slot-section-label { font-family:var(--font-mono);font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:6px; }
+.slot-section-label::after { content:'';flex:1;height:1px;background:var(--border); }
+
+/* Selects */
+.custom-select-wrap { position:relative;display:flex;align-items:center; }
+.select-caret { position:absolute;right:10px;pointer-events:none;color:var(--text-muted); }
+.an-select { width:100%;height:36px;padding:0 32px 0 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font-mono);font-size:.76rem;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;transition:border-color .15s; }
+.an-select:focus { border-color:rgba(139,92,246,.5);box-shadow:0 0 0 2px rgba(139,92,246,.12); }
+.an-select option { background:#0d1117; }
+
+/* ── Camera rows inside a model slot ── */
+.slot-camera-list { display:flex;flex-direction:column;gap:5px; }
+.slot-cam-loading { display:flex;align-items:center;gap:8px;padding:8px 2px;font-family:var(--font-mono);font-size:.72rem;color:var(--text-muted); }
+.slot-cam-empty { padding:8px 2px;font-family:var(--font-mono);font-size:.72rem;color:var(--text-muted);display:flex;align-items:center;gap:7px; }
+
+.slot-cam-row { display:flex;align-items:center;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .14s; }
+.slot-cam-row.checked { border-color:rgba(34,211,238,.4); }
+
+/* Camera checkbox area */
+.slot-cam-check { display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;flex:1;transition:background .14s; }
+.slot-cam-row.checked .slot-cam-check { background:rgba(34,211,238,.05); }
+.slot-cam-check:hover { background:rgba(255,255,255,.03); }
+.slot-cam-check input[type="checkbox"] { width:14px;height:14px;accent-color:var(--cyan);cursor:pointer;flex-shrink:0; }
+.slot-cam-live-dot { width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.6);flex-shrink:0;animation:sdot 1.4s ease-in-out infinite; }
+@keyframes sdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+.slot-cam-name { font-family:var(--font-mono);font-size:.76rem;color:var(--text-primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.slot-cam-id { font-family:var(--font-mono);font-size:.6rem;color:var(--text-muted);flex-shrink:0; }
+
+/* Overlay toggle inside camera row — only shown when checked */
+.slot-cam-overlay { display:none;align-items:center;gap:7px;padding:0 12px;border-left:1px solid var(--border);height:100%;flex-shrink:0;background:rgba(255,255,255,.02); }
+.slot-cam-row.checked .slot-cam-overlay { display:flex; }
+.slot-cam-overlay-label { font-family:var(--font-mono);font-size:.6rem;color:var(--text-muted);white-space:nowrap; }
+
+/* Mini toggle (reused) */
+.mini-toggle { flex-shrink:0; }
+.mini-toggle input { position:absolute;opacity:0;width:0;height:0; }
+.mini-toggle-track { display:block;width:30px;height:17px;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid var(--border-light);position:relative;transition:background .2s;cursor:pointer; }
+.mini-toggle input:checked ~ .mini-toggle-track { background:rgba(34,211,238,.25);border-color:var(--cyan); }
+.mini-toggle-thumb { position:absolute;top:1px;left:1px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transition:transform .18s cubic-bezier(.34,1.56,.64,1); }
+.mini-toggle input:checked ~ .mini-toggle-track .mini-toggle-thumb { transform:translateX(13px);background:var(--cyan); }
+
+/* Scope toggle */
+.slot-scope-row { display:flex;align-items:center;justify-content:space-between;gap:8px; }
+.slot-scope-lbl { font-family:var(--font-mono);font-size:.68rem;color:var(--text-secondary);font-weight:600;letter-spacing:.05em; }
+.scope-toggle { display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden; }
+.scope-btn { height:22px;padding:0 10px;background:transparent;border:none;color:var(--text-muted);font-family:var(--font-mono);font-size:.62rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:all .12s; }
+.scope-btn+.scope-btn { border-left:1px solid var(--border); }
+.scope-btn.active { background:rgba(139,92,246,.15);color:#c4b5fd; }
+.scope-btn:hover:not(.active) { background:rgba(255,255,255,.06);color:var(--text-secondary); }
+
+/* Class picker */
+.slot-class-picker { border:1px solid var(--border);border-radius:7px;overflow:hidden; }
+.slot-class-search { display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02); }
+.slot-class-search input { background:transparent;border:none;outline:none;color:var(--text-primary);font-family:var(--font-mono);font-size:.73rem;width:100%; }
+.slot-class-search input::placeholder { color:var(--text-muted); }
+.slot-class-list { max-height:140px;overflow-y:auto; }
+.slot-class-list::-webkit-scrollbar { width:3px; }
+.slot-class-list::-webkit-scrollbar-thumb { background:var(--border-light);border-radius:2px; }
+.slot-class-item { display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s; }
+.slot-class-item:last-child { border-bottom:none; }
+.slot-class-item:hover { background:rgba(255,255,255,.03); }
+.slot-class-item input[type="checkbox"] { width:13px;height:13px;accent-color:#a78bfa;cursor:pointer; }
+.slot-class-item-id { font-family:var(--font-mono);font-size:.6rem;color:var(--text-muted);min-width:22px; }
+.slot-class-item-name { font-family:var(--font-mono);font-size:.73rem;color:var(--text-primary);flex:1; }
+.slot-class-empty { padding:12px;text-align:center;font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted); }
+
+/* Mini loading pulse */
+.mini-pulse { width:8px;height:8px;border-radius:50%;background:var(--text-muted);animation:lp .9s ease-in-out infinite; }
+@keyframes lp{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+
+/* Add model button */
+.btn-add-model { display:flex;align-items:center;justify-content:center;gap:7px;height:34px;background:rgba(139,92,246,.06);border:1px dashed rgba(139,92,246,.3);border-radius:8px;color:#a78bfa;font-family:var(--font-mono);font-size:.72rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:all .15s; }
+.btn-add-model:hover { background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.55); }
+
+/* Activate button */
+.btn-activate { display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:46px;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;color:var(--text-secondary);font-family:var(--font-mono);font-size:.82rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s; }
+.btn-activate:hover { border-color:var(--border-light);background:rgba(255,255,255,.04); }
+.btn-activate.is-active { background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.45);color:#22c55e;box-shadow:0 2px 20px rgba(34,197,94,.12); }
+.btn-activate.is-active:hover { background:rgba(34,197,94,.16);border-color:#22c55e; }
+.activate-indicator { width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:background .2s;flex-shrink:0; }
+.btn-activate.is-active .activate-indicator { background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.7);animation:gp 1.6s ease-in-out infinite; }
+@keyframes gp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+.activate-hint { font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted);text-align:center;line-height:1.5; }
+
+/* ─────────── Results panel ─────────── */
+.cap-results-col { display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--bg-surface);min-height:480px; }
+.results-header { display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);flex-shrink:0; }
+.results-status-row { display:flex;align-items:center;gap:8px; }
+.results-status-dot { width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.12);flex-shrink:0;transition:background .3s; }
+.results-status-dot.live { background:#22c55e;animation:sdot 1.4s ease-in-out infinite; }
+.results-status-text { font-family:var(--font-mono);font-size:.72rem;color:var(--text-muted); }
+.btn-export-csv { display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-family:var(--font-mono);font-size:.68rem;font-weight:600;cursor:pointer;transition:all .12s; }
+.btn-export-csv:hover { border-color:var(--text-muted);color:var(--text-secondary); }
+
+/* Empty state */
+.results-empty { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px 20px;flex:1; }
+.results-empty-icon { opacity:.2; }
+.results-empty-title { font-size:.95rem;font-weight:600;color:var(--text-secondary); }
+.results-empty-sub { font-family:var(--font-mono);font-size:.73rem;color:var(--text-muted);text-align:center;max-width:280px;line-height:1.6; }
+
+/* ─────────── Stream result card ─────────── */
+.stream-result-card { border-bottom:1px solid var(--border);animation:panelIn .2s ease; }
+.stream-result-card:last-child { border-bottom:none; }
+.src-head { display:flex;align-items:center;gap:10px;padding:12px 18px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border); }
+.src-live-dot { width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0;box-shadow:0 0 6px rgba(34,197,94,.5);animation:sdot 1.6s ease-in-out infinite; }
+.src-name { font-family:var(--font-mono);font-size:.76rem;font-weight:700;color:var(--text-primary); }
+.src-id { font-family:var(--font-mono);font-size:.6rem;color:var(--text-muted); }
+.src-live-badge { margin-left:auto;font-family:var(--font-mono);font-size:.6rem;padding:2px 8px;border-radius:99px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#22c55e; }
+.src-body { padding:14px 18px;display:flex;flex-direction:column;gap:14px; }
+
+/* Per-model section inside result card */
+.src-model-section { display:flex;flex-direction:column;gap:10px; }
+.src-model-header { display:flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted); }
+.src-model-dot { width:5px;height:5px;border-radius:50%;background:#a78bfa;flex-shrink:0; }
+.src-model-name { color:#a78bfa; }
+
+/* Count cards */
+.count-cards-row { display:flex;flex-wrap:wrap;gap:8px; }
+.count-card { flex:1;min-width:90px;max-width:150px;padding:10px 13px;border:1px solid var(--border);border-radius:8px;background:var(--bg-elevated);display:flex;flex-direction:column;gap:3px;animation:panelIn .2s ease;position:relative;overflow:hidden; }
+.count-card-class { font-family:var(--font-mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted); }
+.count-card-num { font-size:1.8rem;font-weight:800;color:var(--text-primary);line-height:1;transition:color .15s; }
+.count-card-num.bump { animation:bump .25s ease; }
+@keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.count-card-sub { font-family:var(--font-mono);font-size:.6rem;color:var(--text-muted); }
+
+/* Chart */
+.src-chart-wrap { height:56px;position:relative; }
+.src-chart-wrap canvas { width:100%!important;display:block; }
+
+/* Stats row */
+.src-stats-row { display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:7px;overflow:hidden; }
+.src-stat { background:var(--bg-elevated);padding:6px 10px; }
+.src-stat-lbl { font-family:var(--font-mono);font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px; }
+.src-stat-val { font-family:var(--font-mono);font-size:.76rem;font-weight:700;color:var(--text-secondary); }
+.src-stat-val.hl { color:var(--cyan); }
+
+/* Model divider */
+.model-divider { border:none;border-top:1px dashed rgba(255,255,255,.08);margin:0; }
+
+/* Soon panels */
+.soon-panel { display:flex;flex-direction:column;align-items:center;gap:16px;padding:60px 40px;text-align:center;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg); }
+.soon-icon { width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:1px solid var(--border-light);color:var(--text-secondary); }
+.soon-panel h2 { font-size:1.2rem;font-weight:700;color:var(--text-primary); }
+.soon-panel p { font-size:.85rem;color:var(--text-secondary);max-width:400px;line-height:1.65; }
+.soon-tags { display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px; }
+.soon-tags span { font-family:var(--font-mono);font-size:.7rem;padding:4px 12px;border-radius:99px;border:1px solid var(--border-light);color:var(--text-muted);background:rgba(255,255,255,.03); }
+
+/* Responsive */
+@media(max-width:1100px){ .cap-layout{grid-template-columns:1fr;} }
+@media(max-width:600px){ .cap-tab-label{display:none;} }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ══════════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════════ */
+const CLASS_COLORS = ['#22d3ee','#e84545','#f59e0b','#a78bfa','#22c55e','#fb923c','#60a5fa','#f472b6','#34d399','#fbbf24'];
+
+let _streams      = [];  
+let _availModels  = [];   
+let _slotCounter  = 0;
+
+let _slots        = [];
+let _isActive     = false;
+let _pollTimer    = null;
+let _tick         = 0;
+
+let _stats     = {};
+let _chartData = {};
+let _colors    = {};
+
+function switchCap(cap) {
+  document.querySelectorAll('.cap-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-cap="${cap}"]`)?.classList.add('active');
+  document.querySelectorAll('.cap-panel').forEach(p => p.classList.add('hidden'));
+  document.getElementById(`panel-${cap}`)?.classList.remove('hidden');
+}
+
+/* ════════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([loadStreams(), loadModels()]);
+
+  const wasActive   = localStorage.getItem('velion_is_active') === '1';
+  const savedSlots  = (() => { try { return JSON.parse(localStorage.getItem('velion_slots_config') || 'null'); } catch(_) { return null; } })();
+
+  if (wasActive && savedSlots && savedSlots.length > 0) {
+    for (const saved of savedSlots) {
+      _slotCounter++;
+      const sid = _slotCounter;
+      _slots.push({
+        slotId:   sid,
+        model:    saved.model,
+        scope:    saved.scope,
+        cameras:  saved.cameras || [],
+        overlays: saved.overlays || {},
+      });
+
+      const wrap = document.getElementById('modelSlots');
+      const el   = document.createElement('div');
+      el.className = 'model-slot';
+      el.id = `slot-${sid}`;
+      el.innerHTML = `
+        <div class="model-slot-head">
+          <span class="model-slot-num">MODEL ${sid}</span>
+          <span class="model-slot-name" id="slot-name-${sid}">loading…</span>
+          <button class="btn-remove-slot" onclick="removeSlot(${sid})">
+            <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="model-slot-body">
+          <div class="custom-select-wrap">
+            <select class="an-select slot-model-sel" id="slotsel-${sid}" onchange="onSlotModelChange(${sid})"></select>
+            <svg viewBox="0 0 10 6" fill="none" width="10" height="10" class="select-caret"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="slot-scope-row">
+            <span class="slot-scope-lbl">Classes</span>
+            <div class="scope-toggle">
+              <button class="scope-btn ${saved.scope==='all'?'active':''}" id="scope-all-${sid}" onclick="setSlotScope(${sid},'all')">All</button>
+              <button class="scope-btn ${saved.scope==='select'?'active':''}" id="scope-sel-${sid}" onclick="setSlotScope(${sid},'select')">Select</button>
+            </div>
+          </div>
+          <div class="slot-class-picker" id="slot-picker-${sid}" style="${saved.scope==='select'?'':'display:none'}">
+            <div class="slot-class-search">
+              <svg viewBox="0 0 16 16" fill="none" width="11" height="11" style="flex-shrink:0;color:var(--text-muted)"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M14 14l-3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              <input type="text" placeholder="Filter classes…" oninput="filterSlotClasses(${sid},this.value)" />
+            </div>
+            <div class="slot-class-list" id="slot-classes-${sid}"><div class="slot-class-empty">Loading…</div></div>
+          </div>
+          <span class="slot-section-label">Cameras &amp; Overlay</span>
+          <div class="slot-camera-list" id="slot-cam-list-${sid}">
+            ${_renderSlotCameras(sid)}
+          </div>
+        </div>`;
+      wrap.appendChild(el);
+
+      const sel = document.getElementById(`slotsel-${sid}`);
+      _fillModelSelect(sel);
+      if (saved.model) {
+        sel.value = saved.model;
+        await onSlotModelChange(sid);
+        if (saved.scope === 'select' && saved.classes) {
+          saved.classes.forEach(({ id, name }) => {
+            const cb = document.querySelector(`.slot-cls-cb[data-slot="${sid}"][value="${id}"]`);
+            if (cb) cb.checked = true;
+          });
+          const slot = _slots.find(s => s.slotId === sid);
+          if (slot) slot.classes = saved.classes.map(c => c.id);
+        }
+      }
+      document.getElementById(`slot-name-${sid}`).textContent =
+        saved.model
+          ? (_availModels.find(m => m.filename === saved.model)?.display_name || saved.model)
+          : 'not selected';
+    }
+
+    // Re-activate
+    activate();
+  } else {
+    addModelSlot();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════
+   STREAMS  (global list — each slot reads from this)
+════════════════════════════════════════════════════════════ */
+async function loadStreams() {
+  try {
+    const res  = await fetch('/api/streams/status');
+    const data = await res.json();
+    _streams = (data.success && data.streams?.length) ? data.streams : [];
+  } catch (_) {
+    _streams = [];
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODELS
+════════════════════════════════════════════════════════════ */
+async function loadModels() {
+  try {
+    const res  = await fetch('/api/models');
+    const data = await res.json();
+    _availModels = (data.models || []).filter(m => m.active);
+    document.querySelectorAll('.slot-model-sel').forEach(sel => {
+      const cur = sel.value;
+      _fillModelSelect(sel);
+      if (cur) sel.value = cur;
+    });
+  } catch (_) {}
+}
+
+function _fillModelSelect(sel) {
+  sel.innerHTML = `<option value="">— Select model —</option>` +
+    _availModels.map(m => `<option value="${m.filename}">${m.display_name || m.filename}</option>`).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODEL SLOTS
+════════════════════════════════════════════════════════════ */
+function addModelSlot() {
+  _slotCounter++;
+  const sid = _slotCounter;
+  _slots.push({ slotId: sid, model: '', scope: 'all', classes: [], cameras: [], overlays: {} });
+
+  const wrap = document.getElementById('modelSlots');
+  const el   = document.createElement('div');
+  el.className = 'model-slot';
+  el.id = `slot-${sid}`;
+  el.innerHTML = `
+    <div class="model-slot-head">
+      <span class="model-slot-num">MODEL ${sid}</span>
+      <span class="model-slot-name" id="slot-name-${sid}">not selected</span>
+      <button class="btn-remove-slot" onclick="removeSlot(${sid})">
+        <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="model-slot-body">
+
+      <!-- 1. Model picker -->
+      <div class="custom-select-wrap">
+        <select class="an-select slot-model-sel" id="slotsel-${sid}" onchange="onSlotModelChange(${sid})"></select>
+        <svg viewBox="0 0 10 6" fill="none" width="10" height="10" class="select-caret"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <!-- 2. Classes section -->
+      <div class="slot-scope-row">
+        <span class="slot-scope-lbl">Classes</span>
+        <div class="scope-toggle">
+          <button class="scope-btn active" id="scope-all-${sid}" onclick="setSlotScope(${sid},'all')">All</button>
+          <button class="scope-btn"        id="scope-sel-${sid}" onclick="setSlotScope(${sid},'select')">Select</button>
+        </div>
+      </div>
+
+      <div class="slot-class-picker" id="slot-picker-${sid}" style="display:none;">
+        <div class="slot-class-search">
+          <svg viewBox="0 0 16 16" fill="none" width="11" height="11" style="flex-shrink:0;color:var(--text-muted)"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M14 14l-3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Filter classes…" oninput="filterSlotClasses(${sid},this.value)" />
+        </div>
+        <div class="slot-class-list" id="slot-classes-${sid}">
+          <div class="slot-class-empty">Select a model first</div>
+        </div>
+      </div>
+
+      <!-- 3. Camera section — with per-stream overlay toggle -->
+      <span class="slot-section-label">Cameras &amp; Overlay</span>
+      <div class="slot-camera-list" id="slot-cam-list-${sid}">
+        ${_renderSlotCameras(sid)}
+      </div>
+
+    </div>
+  `;
+  wrap.appendChild(el);
+  _fillModelSelect(document.getElementById(`slotsel-${sid}`));
+}
+
+function _renderSlotCameras(sid) {
+  const slot = _slots.find(s => s.slotId === sid);
+  if (!_streams.length) {
+    return `<div class="slot-cam-empty">
+      <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M8 5v3M8 10.5h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      No active streams
+    </div>`;
+  }
+  return _streams.map(s => {
+    const isChecked  = slot?.cameras?.includes(s.id) ?? false;
+    const hasOverlay = slot?.overlays?.[s.id] !== false; // default ON
+    return `
+      <div class="slot-cam-row ${isChecked ? 'checked' : ''}" id="slot-cam-row-${sid}-${s.id}">
+        <label class="slot-cam-check" for="slot-cam-cb-${sid}-${s.id}">
+          <input type="checkbox" id="slot-cam-cb-${sid}-${s.id}"
+                 ${isChecked ? 'checked' : ''}
+                 onchange="onSlotCamCheck(${sid},${s.id},this)" />
+          <span class="slot-cam-live-dot"></span>
+          <span class="slot-cam-name">${s.label}</span>
+          <span class="slot-cam-id">CAM #${s.id}</span>
+        </label>
+        <label class="slot-cam-overlay" title="Show count overlay on this stream">
+          <span class="slot-cam-overlay-label">Overlay</span>
+          <div class="mini-toggle">
+            <input type="checkbox" id="slot-overlay-${sid}-${s.id}"
+                   ${hasOverlay ? 'checked' : ''}
+                   onchange="onSlotOverlayToggle(${sid},${s.id},this)" />
+            <span class="mini-toggle-track"><span class="mini-toggle-thumb"></span></span>
+          </div>
+        </label>
+      </div>`;
+  }).join('');
+}
+
+function _refreshAllSlotCameras() {
+  _slots.forEach(slot => {
+    const el = document.getElementById(`slot-cam-list-${slot.slotId}`);
+    if (el) el.innerHTML = _renderSlotCameras(slot.slotId);
+  });
+}
+
+function onSlotCamCheck(slotId, streamId, cb) {
+  const slot = _slots.find(s => s.slotId === slotId);
+  if (!slot) return;
+  const row = document.getElementById(`slot-cam-row-${slotId}-${streamId}`);
+  if (cb.checked) {
+    if (!slot.cameras.includes(streamId)) slot.cameras.push(streamId);
+    row?.classList.add('checked');
+    if (slot.overlays[streamId] === undefined) slot.overlays[streamId] = true;
+  } else {
+    slot.cameras = slot.cameras.filter(id => id !== streamId);
+    row?.classList.remove('checked');
+  }
+}
+
+function onSlotOverlayToggle(slotId, streamId, cb) {
+  const slot = _slots.find(s => s.slotId === slotId);
+  if (slot) slot.overlays[streamId] = cb.checked;
+}
+
+function removeSlot(sid) {
+  _slots = _slots.filter(s => s.slotId !== sid);
+  const el = document.getElementById(`slot-${sid}`);
+  if (el) { el.style.opacity='0'; el.style.transition='opacity .15s'; setTimeout(()=>el.remove(),150); }
+}
+
+async function onSlotModelChange(sid) {
+  const sel   = document.getElementById(`slotsel-${sid}`);
+  const fname = sel?.value || '';
+  const slot  = _slots.find(s => s.slotId === sid);
+  if (slot) { slot.model = fname; slot.classes = []; }
+  document.getElementById(`slot-name-${sid}`).textContent = fname
+    ? (_availModels.find(m => m.filename === fname)?.display_name || fname)
+    : 'not selected';
+
+  const listEl = document.getElementById(`slot-classes-${sid}`);
+  if (!fname || !listEl) { if (listEl) listEl.innerHTML='<div class="slot-class-empty">Select a model first</div>'; return; }
+  listEl.innerHTML = '<div class="slot-class-empty">Loading…</div>';
+  try {
+    const res  = await fetch(`/api/models/class-config/${encodeURIComponent(fname)}`);
+    const data = await res.json();
+    const cls  = data.config?.classes || {};
+    const entries = Object.entries(cls);
+    if (!entries.length) { listEl.innerHTML='<div class="slot-class-empty">No classes — configure in Settings</div>'; return; }
+    listEl.innerHTML = entries.map(([cid,cc])=>`
+      <label class="slot-class-item">
+        <input type="checkbox" class="slot-cls-cb" value="${cid}" data-name="${cc.name||`cls_${cid}`}"
+               data-slot="${sid}" checked onchange="onSlotClassCb(${sid})" />
+        <span class="slot-class-item-id">${cid}</span>
+        <span class="slot-class-item-name">${cc.name||`cls_${cid}`}</span>
+      </label>`).join('');
+    if (slot) slot.classes = entries.map(([cid])=>cid);
+  } catch (_) { if (listEl) listEl.innerHTML='<div class="slot-class-empty">Error loading classes</div>'; }
+}
+
+function setSlotScope(sid, scope) {
+  const slot = _slots.find(s => s.slotId === sid);
+  if (slot) slot.scope = scope;
+  document.getElementById(`scope-all-${sid}`)?.classList.toggle('active', scope==='all');
+  document.getElementById(`scope-sel-${sid}`)?.classList.toggle('active', scope==='select');
+  const picker = document.getElementById(`slot-picker-${sid}`);
+  if (picker) picker.style.display = scope==='select' ? '' : 'none';
+}
+
+function onSlotClassCb(sid) {
+  const slot = _slots.find(s=>s.slotId===sid);
+  if (!slot) return;
+  slot.classes = Array.from(document.querySelectorAll(`.slot-cls-cb[data-slot="${sid}"]:checked`)).map(c=>c.value);
+}
+
+function filterSlotClasses(sid, q) {
+  const lq = q.toLowerCase();
+  document.querySelectorAll(`.slot-cls-cb[data-slot="${sid}"]`).forEach(cb=>{
+    const name = cb.dataset.name?.toLowerCase()||'';
+    cb.closest('.slot-class-item').style.display = name.includes(lq) ? '' : 'none';
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   ACTIVATE / DEACTIVATE
+════════════════════════════════════════════════════════════ */
+function toggleActivate() {
+  _isActive ? deactivate() : activate();
+}
+
+function activate() {
+  const valid = _slots.filter(s => s.model && s.cameras.length > 0);
+  const noModel = _slots.filter(s => !s.model);
+  const noCam   = _slots.filter(s => s.model && s.cameras.length === 0);
+
+  if (!_slots.length) { showToast('Add at least one model first.', 'error'); return; }
+  if (noModel.length) { showToast('Select a model for each slot.', 'error'); return; }
+  if (noCam.length)   { showToast('Assign at least one camera per model.', 'error'); return; }
+
+  _isActive  = true;
+  _stats     = {};
+  _chartData = {};
+  _colors    = {};
+  _tick      = 0;
+
+  const allStreamIds = [...new Set(valid.flatMap(s => s.cameras))];
+
+  const btn = document.getElementById('btnActivate');
+  btn.classList.add('is-active');
+  document.getElementById('activateLabel').textContent = 'Counting Active — Click to Stop';
+  document.getElementById('activateHint').innerHTML =
+    `Running <strong>${valid.length}</strong> model${valid.length>1?'s':''} across <strong>${allStreamIds.length}</strong> stream${allStreamIds.length>1?'s':''}. Results on <a href="/dashboard" class="hint-link">Live Streams</a>.`;
+
+  document.getElementById('resultsDot').classList.add('live');
+  document.getElementById('resultsLabel').textContent = `Live — ${valid.length} model${valid.length>1?'s':''}, ${allStreamIds.length} stream${allStreamIds.length>1?'s':''}`;
+  document.getElementById('btnExport').style.display = '';
+
+  document.getElementById('resultsEmpty').style.display = 'none';
+  const container = document.getElementById('resultsContainer');
+  container.style.display = 'flex';
+  container.innerHTML = '';
+
+  allStreamIds.forEach(streamId => {
+    const stream = _streams.find(s => s.id === streamId) || { id: streamId, label: `Stream #${streamId}` };
+    const slotsForStream = valid.filter(slot => slot.cameras.includes(streamId));
+    _stats[streamId]     = {};
+    _chartData[streamId] = {};
+    _colors[streamId]    = {};
+    container.appendChild(_buildStreamCard(stream, slotsForStream));
+  });
+
+  _syncCountConfig(valid);
+try {
+  localStorage.setItem('velion_slots_config', JSON.stringify(
+    valid.map(s => ({
+      slotId:   s.slotId,
+      model:    s.model,
+      scope:    s.scope,
+      cameras:  s.cameras,
+      overlays: s.overlays,
+      classes:  s.scope === 'select'
+        ? Array.from(document.querySelectorAll(`.slot-cls-cb[data-slot="${s.slotId}"]:checked`))
+               .map(c => ({ id: c.value, name: c.dataset.name }))
+        : null,
+    }))
+  ));
+  localStorage.setItem('velion_is_active', '1');
+} catch(_) {}
+
+showToast(`Counting activated on ${allStreamIds.length} stream${allStreamIds.length>1?'s':''}.`, 'success');
+  startPolling(valid);
+}
+
+function deactivate() {
+  _isActive = false;
+  clearInterval(_pollTimer);
+
+  const btn = document.getElementById('btnActivate');
+  btn.classList.remove('is-active');
+  document.getElementById('activateLabel').textContent = 'Activate Counting';
+  document.getElementById('activateHint').innerHTML =
+    `Once active, count overlays appear on the <a href="/dashboard" class="hint-link">Live Streams</a> page.`;
+  document.getElementById('resultsDot').classList.remove('live');
+  document.getElementById('resultsLabel').textContent = 'Stopped';
+
+try {
+  localStorage.setItem('velion_count_config', JSON.stringify({ active: false, streams: {} }));
+  localStorage.removeItem('velion_slots_config');
+  localStorage.removeItem('velion_is_active');
+} catch(_) {}
+  showToast('Counting stopped.', 'info');
+}
+
+function _syncCountConfig(slots) {
+  const conf = { active: true, streams: {} };
+  slots.forEach(slot => {
+    slot.cameras.forEach(streamId => {
+      if (!conf.streams[streamId]) conf.streams[streamId] = [];
+      conf.streams[streamId].push({
+        slotId:    slot.slotId,
+        model:     slot.model,
+        modelName: _availModels.find(m => m.filename === slot.model)?.display_name || slot.model,
+        scope:     slot.scope,
+        overlay:   slot.overlays[streamId] !== false,  // ← per-stream overlay flag
+        classes:   slot.scope === 'all' ? null :
+          Array.from(document.querySelectorAll(`.slot-cls-cb[data-slot="${slot.slotId}"]:checked`))
+               .map(c => ({ id: c.value, name: c.dataset.name })),
+      });
+    });
+  });
+  try { localStorage.setItem('velion_count_config', JSON.stringify(conf)); } catch(_) {}
+}
+
+/* ════════════════════════════════════════════════════════════
+   BUILD STREAM RESULT CARD
+════════════════════════════════════════════════════════════ */
+function _buildStreamCard(stream, slots) {
+  const card = document.createElement('div');
+  card.className = 'stream-result-card';
+  card.id = `rc-${stream.id}`;
+
+  const sections = slots.map((slot, idx) => {
+    const mname = _availModels.find(m => m.filename === slot.model)?.display_name || slot.model;
+    return `
+      ${idx > 0 ? '<hr class="model-divider">' : ''}
+      <div class="src-model-section" id="rms-${stream.id}-${slot.slotId}">
+        <div class="src-model-header">
+          <span class="src-model-dot"></span>
+          <span class="src-model-name">${mname}</span>
+        </div>
+        <div class="count-cards-row" id="ccrow-${stream.id}-${slot.slotId}">
+          <div class="count-card" style="opacity:.35;">
+            <div class="count-card-class">waiting</div>
+            <div class="count-card-num">—</div>
+          </div>
+        </div>
+        <div class="src-chart-wrap"><canvas id="chart-${stream.id}-${slot.slotId}" height="56"></canvas></div>
+        <div class="src-stats-row">
+          <div class="src-stat"><div class="src-stat-lbl">Peak</div><div class="src-stat-val" id="stat-peak-${stream.id}-${slot.slotId}">—</div></div>
+          <div class="src-stat"><div class="src-stat-lbl">Average</div><div class="src-stat-val" id="stat-avg-${stream.id}-${slot.slotId}">—</div></div>
+          <div class="src-stat"><div class="src-stat-lbl">Frames</div><div class="src-stat-val hl" id="stat-fr-${stream.id}-${slot.slotId}">0</div></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="src-head">
+      <span class="src-live-dot"></span>
+      <span class="src-name">${stream.label}</span>
+      <span class="src-id">CAM #${stream.id}</span>
+      <span class="src-live-badge">LIVE</span>
+    </div>
+    <div class="src-body">${sections}</div>
+  `;
+  return card;
+}
+
+/* ════════════════════════════════════════════════════════════
+   POLLING
+════════════════════════════════════════════════════════════ */
+function startPolling(slots) {
+  _pollTimer = setInterval(async () => {
+    if (!_isActive) { clearInterval(_pollTimer); return; }
+    _tick++;
+    for (const slot of slots) {
+      for (const streamId of slot.cameras) {
+        await pollSlot(streamId, slot);
+      }
+    }
+  }, 1000);
+}
+
+async function pollSlot(streamId, slot) {
+  try {
+    let classNames = [];
+    if (slot.scope === 'all') {
+      const cfgRes  = await fetch(`/api/models/class-config/${encodeURIComponent(slot.model)}`);
+      const cfgData = await cfgRes.json();
+      classNames = Object.values(cfgData.config?.classes || {}).map(c => c.name || '').filter(Boolean);
+    } else {
+      classNames = Array.from(document.querySelectorAll(`.slot-cls-cb[data-slot="${slot.slotId}"]:checked`))
+                        .map(c => c.dataset.name).filter(Boolean);
+    }
+    if (!classNames.length) return;
+
+let counts = {};
+try {
+  const res  = await fetch(`/api/stream-count/${streamId}?model=${encodeURIComponent(slot.model)}`);
+  const data = await res.json();
+  if (data.success && data.counts) {
+    if (slot.scope === 'all') {
+      counts = data.counts;
+    } else {
+      classNames.forEach(name => {
+        if (name in data.counts) counts[name] = data.counts[name];
+        else counts[name] = _stats[streamId]?.[slot.slotId]?.[name]?.cur || 0;
+      });
+    }
+  } else {
+    classNames.forEach(name => {
+      counts[name] = _stats[streamId]?.[slot.slotId]?.[name]?.cur || 0;
+    });
+  }
+} catch(_) {
+  classNames.forEach(name => {
+    counts[name] = _stats[streamId]?.[slot.slotId]?.[name]?.cur || 0;
+  });
+}
+
+    updateSlotDisplay(streamId, slot.slotId, counts);
+
+    if (slot.overlays[streamId] !== false) {
+      _syncOverlayData(streamId, slot.slotId, counts);
+    }
+
+  } catch (_) {}
+}
+
+/* ════════════════════════════════════════════════════════════
+   DISPLAY UPDATE
+════════════════════════════════════════════════════════════ */
+function updateSlotDisplay(streamId, slotId, counts) {
+  if (!_stats[streamId])           _stats[streamId] = {};
+  if (!_stats[streamId][slotId])   _stats[streamId][slotId] = {};
+  if (!_chartData[streamId])       _chartData[streamId] = {};
+  if (!_chartData[streamId][slotId]) _chartData[streamId][slotId] = {};
+  if (!_colors[streamId])          _colors[streamId] = {};
+  if (!_colors[streamId][slotId])  _colors[streamId][slotId] = {};
+
+  const names = Object.keys(counts);
+
+  names.forEach((name, idx) => {
+    const val = counts[name];
+    if (!_stats[streamId][slotId][name]) {
+      _stats[streamId][slotId][name] = { cur: 0, max: 0, sum: 0, samples: 0 };
+      _colors[streamId][slotId][name] = CLASS_COLORS[idx % CLASS_COLORS.length];
+    }
+    const s = _stats[streamId][slotId][name];
+    s.cur = val; s.max = Math.max(s.max, val); s.sum += val; s.samples++;
+
+    if (!_chartData[streamId][slotId][name]) _chartData[streamId][slotId][name] = [];
+    _chartData[streamId][slotId][name].push(val);
+    if (_chartData[streamId][slotId][name].length > 40) _chartData[streamId][slotId][name].shift();
+  });
+
+  const rowEl = document.getElementById(`ccrow-${streamId}-${slotId}`);
+  if (rowEl) {
+    names.forEach((name, idx) => {
+      const color = _colors[streamId][slotId][name];
+      const safeId = `${streamId}-${slotId}-${name.replace(/\W/g,'_')}`;
+      let card = document.getElementById(`cc-${safeId}`);
+      if (!card) {
+        rowEl.innerHTML = '';
+        card = document.createElement('div');
+        card.className = 'count-card';
+        card.id = `cc-${safeId}`;
+        card.style.borderTop = `2px solid ${color}`;
+        card.innerHTML = `
+          <div class="count-card-class">${name}</div>
+          <div class="count-card-num" id="ccn-${safeId}">0</div>
+          <div class="count-card-sub">current</div>`;
+        rowEl.appendChild(card);
+      }
+      const numEl = document.getElementById(`ccn-${safeId}`);
+      if (numEl && numEl.textContent !== String(_stats[streamId][slotId][name].cur)) {
+        numEl.textContent = _stats[streamId][slotId][name].cur;
+        numEl.classList.remove('bump'); void numEl.offsetWidth; numEl.classList.add('bump');
+      }
+    });
+  }
+
+  _renderChart(streamId, slotId);
+
+  const totalMax = names.reduce((a,n) => a + _stats[streamId][slotId][n].max, 0);
+  const totalAvg = names.reduce((a,n) => {
+    const s = _stats[streamId][slotId][n];
+    return a + (s.samples > 0 ? s.sum/s.samples : 0);
+  }, 0).toFixed(1);
+
+  const peakEl = document.getElementById(`stat-peak-${streamId}-${slotId}`);
+  const avgEl  = document.getElementById(`stat-avg-${streamId}-${slotId}`);
+  const frEl   = document.getElementById(`stat-fr-${streamId}-${slotId}`);
+  if (peakEl) peakEl.textContent = totalMax;
+  if (avgEl)  avgEl.textContent  = totalAvg;
+  if (frEl)   frEl.textContent   = _tick;
+}
+
+/* ════════════════════════════════════════════════════════════
+   CHART
+════════════════════════════════════════════════════════════ */
+function _renderChart(streamId, slotId) {
+  const canvas = document.getElementById(`chart-${streamId}-${slotId}`);
+  if (!canvas) return;
+  const ctx  = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width || 300;
+  const W = canvas.width, H = 56;
+  ctx.clearRect(0,0,W,H);
+
+  const slotCharts = _chartData[streamId]?.[slotId] || {};
+  const allVals    = Object.values(slotCharts).flat();
+  const maxVal     = Math.max(...allVals, 1);
+
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+
+  Object.entries(slotCharts).forEach(([name, data]) => {
+    if (data.length < 2) return;
+    const color = _colors[streamId]?.[slotId]?.[name] || CLASS_COLORS[0];
+    ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.lineJoin='round';
+    ctx.shadowColor=color; ctx.shadowBlur=3;
+    ctx.beginPath();
+    data.forEach((val,i) => {
+      const x = (i/(data.length-1))*W;
+      const y = H-4-(val/maxVal)*(H-8);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke(); ctx.shadowBlur=0;
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   OVERLAY SYNC
+════════════════════════════════════════════════════════════ */
+function _syncOverlayData(streamId, slotId, counts) {
+  try {
+    const key  = 'velion_count_live';
+    const raw  = localStorage.getItem(key);
+    const all  = raw ? JSON.parse(raw) : {};
+    if (!all[streamId]) all[streamId] = {};
+    all[streamId][slotId] = counts;
+    all[streamId]['_ts']  = Date.now();
+    localStorage.setItem(key, JSON.stringify(all));
+  } catch(_) {}
+}
+
+/* ════════════════════════════════════════════════════════════
+   EXPORT CSV
+════════════════════════════════════════════════════════════ */
+function exportCsv() {
+  const rows = [['Stream','Model','Class','Current','Peak','Average','Frames']];
+  const validSlots = _slots.filter(s => s.model);
+  validSlots.forEach(slot => {
+    const mname = _availModels.find(m => m.filename === slot.model)?.display_name || slot.model;
+    slot.cameras.forEach(streamId => {
+      const stream = _streams.find(s => s.id === streamId);
+      const slotStats = _stats[streamId]?.[slot.slotId] || {};
+      Object.entries(slotStats).forEach(([name, s]) => {
+        rows.push([stream?.label||`#${streamId}`, mname, name, s.cur, s.max,
+          (s.samples>0 ? s.sum/s.samples : 0).toFixed(2), s.samples]);
+      });
+    });
+  });
+  const blob = new Blob([rows.map(r=>r.join(',')).join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `velion_count_${Date.now()}.csv`;
+  a.click();
+  showToast('Count data exported.', 'success');
+}
+</script>
+{% endblock %}

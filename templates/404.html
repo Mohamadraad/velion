@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}404 — Signal Lost | Velion{% endblock %}
+{% block page_title %}Error{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/404.css') }}">
+{% endblock %}
+{% block content %}
+
+<div class="e404-page">
+
+  <div class="e404-bg-grid">
+    {% for i in range(24) %}
+    <span>📷</span>
+    {% endfor %}
+  </div>
+  <div class="e404-vignette"></div>
+  <div class="e404-static"></div>
+  <div class="e404-content">
+    <div class="e404-logo-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="e404Left" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff5050"/>
+            <stop offset="100%" stop-color="#e84545"/>
+          </linearGradient>
+          <linearGradient id="e404Right" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#c73333"/>
+            <stop offset="100%" stop-color="#6a1515"/>
+          </linearGradient>
+          <linearGradient id="e404Bezel" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2a3347"/>
+            <stop offset="50%" stop-color="#1a2030"/>
+            <stop offset="100%" stop-color="#0f1420"/>
+          </linearGradient>
+          <clipPath id="e404Lens">
+            <circle cx="100" cy="100" r="76"/>
+          </clipPath>
+        </defs>
+        <circle cx="100" cy="100" r="94" fill="url(#e404Bezel)"/>
+        <circle cx="100" cy="100" r="94" fill="none" stroke="#0d1118" stroke-width="1" stroke-dasharray="5 3"/>
+        <circle cx="100" cy="100" r="88" fill="#0b0e18"/>
+        <circle cx="100" cy="100" r="88" fill="none" stroke="#1e2838" stroke-width="1.2"/>
+        <circle cx="100" cy="100" r="82" fill="#090c15"/>
+        <circle cx="100" cy="100" r="82" fill="none" stroke="#141c2a" stroke-width="0.8"/>
+        <circle cx="100" cy="100" r="76" fill="#06080e"/>
+        <circle cx="100" cy="100" r="76" fill="none" stroke="#0e1520" stroke-width="0.8"/>
+        <circle cx="100" cy="100" r="68" fill="none" stroke="#0a1018" stroke-width="0.6"/>
+        <path d="M 46 58 A 70 70 0 0 1 88 28" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" stroke-linecap="round"/>
+        <polygon points="54,53 80,53 102,147 76,147" fill="url(#e404Left)" clip-path="url(#e404Lens)"/>
+        <polygon points="146,53 120,53 98,147 124,147" fill="url(#e404Right)" clip-path="url(#e404Lens)"/>
+        <polygon points="76,147 102,147 100,153 78,153" fill="#06080e" clip-path="url(#e404Lens)"/>
+        <line x1="62" y1="61" x2="80" y2="137" stroke="rgba(255,120,120,0.2)" stroke-width="1.5" clip-path="url(#e404Lens)"/>
+      </svg>
+
+      <div class="e404-logo-glitch" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+          <defs>
+            <clipPath id="e404Lens2"><circle cx="100" cy="100" r="76"/></clipPath>
+          </defs>
+          <circle cx="100" cy="100" r="94" fill="#1a2030" opacity="0.4"/>
+          <polygon points="54,53 80,53 102,147 76,147" fill="#22d3ee" clip-path="url(#e404Lens2)" opacity="0.6"/>
+          <polygon points="146,53 120,53 98,147 124,147" fill="#22d3ee" clip-path="url(#e404Lens2)" opacity="0.4"/>
+        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+          <defs>
+            <clipPath id="e404Lens3"><circle cx="100" cy="100" r="76"/></clipPath>
+          </defs>
+          <circle cx="100" cy="100" r="94" fill="#1a2030" opacity="0.3"/>
+          <polygon points="54,53 80,53 102,147 76,147" fill="#ff5050" clip-path="url(#e404Lens3)" opacity="0.5"/>
+          <polygon points="146,53 120,53 98,147 124,147" fill="#ff5050" clip-path="url(#e404Lens3)" opacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="e404-badge">
+      <div class="e404-badge-dot"></div>
+      Signal Lost
+    </div>
+
+    <div class="e404-number">404</div>
+
+    <h1 class="e404-headline">Cam offline. Page not found.</h1>
+
+    <p class="e404-sub">
+      Velion deployed <span>12 cameras</span> to find this page.<br/>
+      All 12 came back empty. Even the one in the ceiling.<br/>
+      Frankly, we're impressed — you found a blind spot.
+    </p>
+
+    <div class="e404-terminal">
+      <div class="e404-terminal-bar">
+        <div class="e404-term-dot"></div>
+        <div class="e404-term-dot"></div>
+        <div class="e404-term-dot"></div>
+        <span class="e404-term-title">velion-core — incident-report.log</span>
+      </div>
+      <div class="e404-terminal-body">
+        <span class="tl"><span class="tl-time">[00:00:01]</span> <span class="tl-ok">✓ BOOT</span> <span class="tl-text">System initialised — 4 streams active</span></span>
+        <span class="tl"><span class="tl-time">[00:00:02]</span> <span class="tl-ok">✓ MODEL</span> <span class="tl-text">Detection engine loaded — confidence 0.40</span></span>
+        <span class="tl"><span class="tl-time">[00:00:04]</span> <span class="tl-warn">⚠ ROUTE</span> <span class="tl-text">Incoming request: <span style="color:#e8ecf4">{{ request.path }}</span></span></span>
+        <span class="tl"><span class="tl-time">[00:00:04]</span> <span class="tl-warn">⚠ SCAN</span> <span class="tl-text">Dispatching 12 cameras to locate page...</span></span>
+        <span class="tl"><span class="tl-time">[00:00:07]</span> <span class="tl-err">✕ CAM01-12</span> <span class="tl-text">Nothing detected. Zero frames. Total silence.</span></span>
+        <span class="tl"><span class="tl-time">[00:00:08]</span> <span class="tl-err">✕ FATAL</span> <span class="tl-text">Page does not exist in observable universe.</span></span>
+        <span class="tl"><span class="tl-time">[00:00:09]</span> <span class="tl-muted">—————</span> <span class="tl-muted">incident logged — severity: embarrassing</span></span>
+        <span class="tl"><span class="tl-time">[00:00:09]</span> <span class="tl-ok">→ SYS</span> <span class="tl-typing"><span class="tl-text">Recommend returning to </span><span style="color:#22d3ee">overview</span></span><span class="tl-cursor"></span></span>
+      </div>
+    </div>
+
+    <div class="e404-actions">
+      <a href="/" class="e404-btn-primary">
+        <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+          <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Back to Overview
+      </a>
+      <a href="/dashboard" class="e404-btn-ghost">
+        <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+          <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M2 8C2 8 4.5 3 8 3C11.5 3 14 8 14 8C14 8 11.5 13 8 13C4.5 13 2 8 2 8Z" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Live Streams
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+.usecases-row {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 28px 32px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+.usecases-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.usecases-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.uc-tag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    background: var(--bg-elevated);
+    letter-spacing: 0.03em;
+    transition: all 0.15s ease;
+}
+.uc-tag:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+.uc-tag--more {
+    border-color: rgba(232,69,69,0.3);
+    color: var(--accent);
+    background: rgba(232,69,69,0.06);
+}

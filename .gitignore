@@ -1,0 +1,74 @@
+# ─────────────────────────────────────────────────────────────────────
+# VELION — .gitignore
+# ─────────────────────────────────────────────────────────────────────
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Environment / secrets
+.env
+.env.local
+*.env
+
+# Velion runtime data — never commit these
+uploads/
+exports/
+recordings/
+models/
+data/
+samples/
+# But keep the folder structure
+!uploads/.gitkeep
+!exports/.gitkeep
+!recordings/.gitkeep
+!models/.gitkeep
+!data/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+*.pid
+
+# PyTorch / ML model files (large — use Git LFS if you want to track them)
+*.pt
+*.onnx
+*.pth
+*.weights
+*.h5
+velion_architecture.html
+test.py
+# Coverage / testing
+.coverage
+htmlcov/
+.pytest_cache/
+.dockerignore
+*.log
+.DS_Store

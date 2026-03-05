@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+{% block title %}Recordings — Velion{% endblock %}
+{% block page_title %}Recordings{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/recording.css">
+{% endblock %}
+{% block content %}
+<div class="recordings-page">
+
+  <!-- ── HERO ── -->
+  <div class="rec-hero">
+    <div>
+      <div class="rec-eyebrow"><span class="eyebrow-dot"></span>Camera DVR</div>
+      <h1 class="rec-headline">Recordings</h1>
+      <p class="rec-desc">Browse, playback and manage saved camera footage. Files are stored locally in <code>recordings/</code>.</p>
+    </div>
+    <div class="rec-hero-actions">
+      <button class="btn-rec-all" id="btnRecordAll" onclick="startAllRecording()">
+        <span class="rec-dot" id="recAllDot"></span>
+        Record All Cameras
+      </button>
+      <button class="btn-stop-all" id="btnStopAll" onclick="stopAllRecording()" style="display:none;">
+        <svg viewBox="0 0 14 14" fill="none" width="12" height="12">
+          <rect x="2" y="2" width="10" height="10" rx="1.5" fill="currentColor"/>
+        </svg>
+        Stop All
+      </button>
+    </div>
+  </div>
+
+  <!-- ── LIVE CAMERAS STRIP ── -->
+  <section class="rec-cameras-section">
+    <div class="rec-section-head">
+      <h2>Live Cameras</h2>
+      <span class="rec-section-sub" id="cameraCount">Loading…</span>
+    </div>
+    <div class="rec-cameras-grid" id="camerasGrid">
+      <div class="rec-cam-loading">
+        <div class="loading-pulse"></div>
+        <span>Loading streams…</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SAVED RECORDINGS ── -->
+  <section class="rec-files-section">
+    <div class="rec-section-head">
+      <h2>Saved Recordings</h2>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="rec-section-sub" id="filesCount">—</span>
+        <div class="rec-filter-wrap">
+          <select class="rec-filter-select" id="filterCamera" onchange="filterRecordings()">
+            <option value="">All Cameras</option>
+          </select>
+        </div>
+        <button class="btn-refresh-files" onclick="loadRecordings()">
+          <svg viewBox="0 0 14 14" fill="none" width="11" height="11">
+            <path d="M2 7a5 5 0 1 0 1-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M2 3v4H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="rec-empty" id="recEmpty" style="display:none;">
+      <svg viewBox="0 0 64 64" fill="none" width="56" height="56">
+        <rect x="6" y="16" width="38" height="28" rx="4" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
+        <path d="M44 26l14-6v24l-14-6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" opacity=".3"/>
+        <circle cx="25" cy="30" r="6" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
+      </svg>
+      <p class="rec-empty-title">No recordings yet</p>
+      <p class="rec-empty-sub">Start recording a live stream using the buttons above.</p>
+    </div>
+
+    <!-- Files table -->
+    <div class="rec-table-wrap" id="recTableWrap" style="display:none;">
+      <table class="rec-table" id="recTable">
+        <thead>
+          <tr>
+            <th>Camera</th>
+            <th>Date / Time</th>
+            <th>Size</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="recTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<!-- ── VIDEO PLAYER MODAL ── -->
+<div class="modal-backdrop hidden" id="playerBackdrop">
+  <div class="player-modal">
+    <div class="player-header">
+      <span class="player-title" id="playerTitle">Recording</span>
+      <button class="modal-close" onclick="closePlayer()">
+        <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+          <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <video id="playerVideo" controls style="width:100%;max-height:70vh;background:#000;display:block;"></video>
+    <div class="player-footer">
+      <a id="playerDownload" class="btn-download-rec" download>
+        <svg viewBox="0 0 14 14" fill="none" width="12" height="12">
+          <path d="M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 11h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Download
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+
+</style>
+
+<script>
+let _allRecordings = [];
+let _recordingIds  = new Set();
+let _streams       = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([loadStreams(), loadRecordings()]);
+  startStatusPoller();
+});
+
+async function loadStreams() {
+  try {
+    const res  = await fetch('/api/streams/status');
+    const data = await res.json();
+    _streams = data.success ? (data.streams || []) : [];
+  } catch (_) { _streams = []; }
+  renderCameraCards();
+}
+
+function renderCameraCards() {
+  const grid = document.getElementById('camerasGrid');
+  const countEl = document.getElementById('cameraCount');
+  if (countEl) countEl.textContent = `${_streams.length} stream${_streams.length !== 1 ? 's' : ''} connected`;
+
+  if (!_streams.length) {
+    grid.innerHTML = `<div class="rec-cam-empty">
+      <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M8 5v3M8 10.5h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      No live streams — connect cameras on the <a href="/dashboard" style="color:var(--cyan)">Live Streams</a> page first.
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = _streams.map(s => {
+    const isRec = _recordingIds.has(s.id);
+    return `
+      <div class="rec-cam-card ${isRec ? 'is-recording' : ''}" id="cam-card-${s.id}">
+        <div class="rec-cam-top">
+          <span class="rec-cam-live-dot"></span>
+          <span class="rec-cam-label">${s.label}</span>
+          <span class="rec-cam-id">CAM #${s.id}</span>
+        </div>
+        <div class="rec-cam-body">
+          <div class="rec-cam-status">
+            <span class="rec-status-dot ${isRec ? 'recording' : ''}" id="status-dot-${s.id}"></span>
+            <span id="status-text-${s.id}">${isRec ? 'Recording…' : 'Idle'}</span>
+          </div>
+          ${isRec
+            ? `<button class="rec-cam-btn rec-cam-btn--stop" id="rec-btn-${s.id}" onclick="stopCamera(${s.id})">
+                <svg viewBox="0 0 14 14" fill="none" width="11" height="11"><rect x="2" y="2" width="10" height="10" rx="1.5" fill="currentColor"/></svg>
+                Stop Recording
+               </button>`
+            : `<button class="rec-cam-btn rec-cam-btn--start" id="rec-btn-${s.id}" onclick="startCamera(${s.id})">
+                <svg viewBox="0 0 14 14" fill="none" width="11" height="11"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>
+                Start Recording
+               </button>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+
+  _updateRecordAllBtn();
+}
+
+async function startCamera(streamId) {
+  const btn = document.getElementById(`rec-btn-${streamId}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
+  try {
+    const res  = await fetch(`/api/recording/start/${streamId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      _recordingIds.add(streamId);
+      showToast(data.message, 'success');
+      renderCameraCards();
+      setTimeout(loadRecordings, 1500);
+    } else {
+      showToast(data.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Start Recording'; }
+    }
+  } catch (_) {
+    showToast('Network error', 'error');
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+async function stopCamera(streamId) {
+  const btn = document.getElementById(`rec-btn-${streamId}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Stopping…'; }
+  try {
+    const res  = await fetch(`/api/recording/stop/${streamId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      _recordingIds.delete(streamId);
+      showToast(data.message, 'info');
+      renderCameraCards();
+      setTimeout(loadRecordings, 800);
+    } else {
+      showToast(data.message, 'error');
+      if (btn) { btn.disabled = false; }
+    }
+  } catch (_) {
+    showToast('Network error', 'error');
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+async function startAllRecording() {
+  try {
+    const res  = await fetch('/api/recording/start-all', { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message, 'success');
+    await refreshStatus();
+    renderCameraCards();
+    setTimeout(loadRecordings, 1500);
+  } catch (_) { showToast('Network error', 'error'); }
+}
+
+async function stopAllRecording() {
+  try {
+    const res  = await fetch('/api/recording/stop-all', { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message, 'info');
+    await refreshStatus();
+    renderCameraCards();
+    setTimeout(loadRecordings, 800);
+  } catch (_) { showToast('Network error', 'error'); }
+}
+
+function _updateRecordAllBtn() {
+  const allBtn  = document.getElementById('btnRecordAll');
+  const stopBtn = document.getElementById('btnStopAll');
+  const dot     = document.getElementById('recAllDot');
+  const anyRec  = _recordingIds.size > 0;
+  if (anyRec) {
+    allBtn.style.display = 'none';
+    stopBtn.style.display = '';
+    if (dot) dot.classList.add('pulsing');
+  } else {
+    allBtn.style.display = '';
+    stopBtn.style.display = 'none';
+    if (dot) dot.classList.remove('pulsing');
+  }
+}
+
+function startStatusPoller() {
+  setInterval(async () => {
+    await refreshStatus();
+    _streams.forEach(s => {
+      const isRec   = _recordingIds.has(s.id);
+      const dotEl   = document.getElementById(`status-dot-${s.id}`);
+      const textEl  = document.getElementById(`status-text-${s.id}`);
+      const cardEl  = document.getElementById(`cam-card-${s.id}`);
+      const btnEl   = document.getElementById(`rec-btn-${s.id}`);
+      if (dotEl)  dotEl.className  = `rec-status-dot ${isRec ? 'recording' : ''}`;
+      if (textEl) textEl.textContent = isRec ? 'Recording…' : 'Idle';
+      if (cardEl) cardEl.classList.toggle('is-recording', isRec);
+      if (btnEl && !btnEl.disabled) {
+        if (isRec) {
+          btnEl.className = 'rec-cam-btn rec-cam-btn--stop';
+          btnEl.onclick   = () => stopCamera(s.id);
+          btnEl.innerHTML = `<svg viewBox="0 0 14 14" fill="none" width="11" height="11"><rect x="2" y="2" width="10" height="10" rx="1.5" fill="currentColor"/></svg> Stop Recording`;
+        } else {
+          btnEl.className = 'rec-cam-btn rec-cam-btn--start';
+          btnEl.onclick   = () => startCamera(s.id);
+          btnEl.innerHTML = `<svg viewBox="0 0 14 14" fill="none" width="11" height="11"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg> Start Recording`;
+        }
+      }
+    });
+    _updateRecordAllBtn();
+  }, 3000);
+}
+
+async function refreshStatus() {
+  try {
+    const res  = await fetch('/api/recording/status');
+    const data = await res.json();
+    if (data.success) {
+      _recordingIds = new Set(data.recording);
+    }
+  } catch (_) {}
+}
+
+async function loadRecordings() {
+  try {
+    const res  = await fetch('/api/recordings');
+    const data = await res.json();
+    _allRecordings = data.success ? (data.recordings || []) : [];
+  } catch (_) { _allRecordings = []; }
+  _populateCameraFilter();
+  renderRecordingsTable(_allRecordings);
+}
+
+function _populateCameraFilter() {
+  const sel = document.getElementById('filterCamera');
+  const cur = sel.value;
+  const cameras = [...new Map(_allRecordings.map(r => [r.stream_id, r.label])).entries()];
+  sel.innerHTML = `<option value="">All Cameras</option>` +
+    cameras.map(([id, label]) => `<option value="${id}">${label} (#${id})</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+function filterRecordings() {
+  const sel = document.getElementById('filterCamera');
+  const id  = sel.value ? parseInt(sel.value) : null;
+  const filtered = id !== null ? _allRecordings.filter(r => r.stream_id === id) : _allRecordings;
+  renderRecordingsTable(filtered);
+}
+
+function renderRecordingsTable(recs) {
+  const empty    = document.getElementById('recEmpty');
+  const tableWrap= document.getElementById('recTableWrap');
+  const tbody    = document.getElementById('recTableBody');
+  const countEl  = document.getElementById('filesCount');
+
+  const totalMb  = recs.reduce((s, r) => s + r.size_mb, 0);
+  if (countEl) countEl.textContent = `${recs.length} file${recs.length !== 1 ? 's' : ''} · ${totalMb.toFixed(1)} MB total`;
+
+  if (!recs.length) {
+    empty.style.display    = '';
+    tableWrap.style.display = 'none';
+    return;
+  }
+  empty.style.display    = 'none';
+  tableWrap.style.display = '';
+
+  tbody.innerHTML = recs.map(r => {
+    const dt  = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : '—';
+    const url = `/recordings/${r.cam_dir}/${r.filename}`;
+    return `
+      <tr>
+        <td class="rec-td-cam">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <svg viewBox="0 0 14 14" fill="none" width="11" height="11" style="color:var(--text-muted);flex-shrink:0;"><rect x="1" y="3" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M11 6l3-1.5v5L11 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+            ${r.label}
+            <span style="font-family:var(--font-mono);font-size:.58rem;color:var(--text-muted);">#${r.stream_id}</span>
+          </div>
+        </td>
+        <td class="rec-td-date">${dt}</td>
+        <td class="rec-td-size">${r.size_mb} MB</td>
+        <td>
+          <div class="rec-td-actions">
+            <button class="btn-play-rec" onclick="openPlayer('${url}','${r.label} — ${dt}')">
+              <svg viewBox="0 0 14 14" fill="none" width="10" height="10"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 5l4 2-4 2V5z" fill="currentColor"/></svg>
+              Play
+            </button>
+            <a class="btn-dl-rec" href="${url}" download="${r.filename}">
+              <svg viewBox="0 0 14 14" fill="none" width="10" height="10"><path d="M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Download
+            </a>
+            <button class="btn-del-rec" onclick="deleteRecording('${r.cam_dir}','${r.filename}')" title="Delete">
+              <svg viewBox="0 0 14 14" fill="none" width="11" height="11"><path d="M2 4h10M5 4V3a1 1 0 011-1h2a1 1 0 011 1v1M4 4l.8 8h4.4L10 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+async function deleteRecording(camDir, filename) {
+  if (!confirm(`Delete ${filename}?`)) return;
+  try {
+    const res  = await fetch('/api/recordings/delete', {
+      method: 'DELETE', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ cam_dir: camDir, filename }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Recording deleted.', 'info');
+      loadRecordings();
+    } else {
+      showToast(data.message || 'Delete failed', 'error');
+    }
+  } catch (_) { showToast('Network error', 'error'); }
+}
+
+function openPlayer(url, title) {
+  const backdrop = document.getElementById('playerBackdrop');
+  const video    = document.getElementById('playerVideo');
+  const titleEl  = document.getElementById('playerTitle');
+  const dlBtn    = document.getElementById('playerDownload');
+  video.src      = url;
+  titleEl.textContent  = title;
+  dlBtn.href     = url;
+  dlBtn.download = url.split('/').pop();
+  backdrop.classList.remove('hidden');
+  void backdrop.offsetWidth;
+  backdrop.classList.add('visible');
+  video.play().catch(() => {});
+}
+
+function closePlayer() {
+  const backdrop = document.getElementById('playerBackdrop');
+  const video    = document.getElementById('playerVideo');
+  video.pause();
+  video.src = '';
+  backdrop.classList.remove('visible');
+  setTimeout(() => backdrop.classList.add('hidden'), 250);
+}
+
+document.getElementById('playerBackdrop').addEventListener('click', e => {
+  if (e.target === document.getElementById('playerBackdrop')) closePlayer();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePlayer();
+});
+</script>
+{% endblock %}

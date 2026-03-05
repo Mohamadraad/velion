@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Overview — Velion{% endblock %}
+{% block page_title %}Overview{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+{% block content %}
+<div class="overview-page">
+
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="hero-eyebrow">AI-Powered Visual Intelligence</div>
+            <h1 class="hero-headline">Intelligent <span class="accent">surveillance</span><br/>for any environment.</h1>
+            <p class="hero-desc">Velion AI monitors live camera streams and uploaded footage using pluggable computer vision models — detect accidents, theft, falls, safety violations, and more. Bring your own model, Velion handles the rest.</p>
+            <div class="hero-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn-primary">Connect Camera Streams</a>
+                <a href="{{ url_for('upload') }}" class="btn-ghost">Analyze Video File</a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-grid">
+                <div class="cam-preview-card" data-delay="0">
+                    <div class="cam-preview-header">
+                        <div class="cam-dot live"></div>
+                        <span>CAM — 01</span>
+                    </div>
+                    <div class="cam-preview-body">
+                        <div class="scan-line"></div>
+                        <div class="no-signal">NO SIGNAL</div>
+                    </div>
+                </div>
+                <div class="cam-preview-card" data-delay="1">
+                    <div class="cam-preview-header">
+                        <div class="cam-dot"></div>
+                        <span>CAM — 02</span>
+                    </div>
+                    <div class="cam-preview-body">
+                        <div class="no-signal">NO SIGNAL</div>
+                    </div>
+                </div>
+                <div class="cam-preview-card" data-delay="2">
+                    <div class="cam-preview-header">
+                        <div class="cam-dot"></div>
+                        <span>CAM — 03</span>
+                    </div>
+                    <div class="cam-preview-body">
+                        <div class="no-signal">NO SIGNAL</div>
+                    </div>
+                </div>
+                <div class="cam-preview-card" data-delay="3">
+                    <div class="cam-preview-header">
+                        <div class="cam-dot"></div>
+                        <span>CAM — 04</span>
+                    </div>
+                    <div class="cam-preview-body">
+                        <div class="no-signal">NO SIGNAL</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS ROW -->
+    <section class="stats-row">
+        <div class="stat-card">
+            <div class="stat-number" id="statStreams" style="opacity:0">0</div>
+            <div class="stat-label">Active Streams</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+            <div class="stat-number" id="statAlerts" style="opacity:0">0</div>
+            <div class="stat-label">Alerts Today</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+            <div class="stat-number" id="statVideos" style="opacity:0">0</div>
+            <div class="stat-label">Videos Analyzed</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+            <div class="stat-number" id="statModelName" style="opacity:0">—</div>
+            <div class="stat-label">Model Status</div>
+            <div class="stat-sub" id="modelStatus" style="opacity:0">Not Loaded</div>
+        </div>
+    </section>
+
+    <!-- FEATURE CARDS -->
+    <section class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M12 3V6M12 18V21M3 12H6M18 12H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <h3>Live Stream Analysis</h3>
+            <p>Connect up to 4 IP camera streams via RTSP or HTTP and monitor them simultaneously in real time. Events are flagged the moment your model detects them.</p>
+            <a href="{{ url_for('dashboard') }}" class="feature-link">Open Dashboard →</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M15 10L19.5528 7.72361C19.8343 7.58281 20.1657 7.58281 20.4472 7.72361L21 8V16L20.4472 16.2764C20.1657 16.4172 19.8343 16.4172 19.5528 16.2764L15 14V10Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><rect x="3" y="7" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <h3>Video File Upload</h3>
+            <p>Upload any recorded footage for retrospective analysis. Supports MP4, AVI, MOV, and MKV formats up to 500MB — results are annotated and exportable.</p>
+            <a href="{{ url_for('upload') }}" class="feature-link">Upload Video →</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18A2 2 0 0 0 3.54 21H20.46A2 2 0 0 0 22.18 18L13.71 3.86A2 2 0 0 0 10.29 3.86Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <h3>Instant Alerts</h3>
+            <p>When an event is detected, Velion raises an alert with timestamp, source camera, severity level, and a visual snapshot — regardless of what your model targets.</p>
+            <a href="#" class="feature-link">View Alert Log →</a>
+        </div>
+    </section>
+   <section class="usecases-row">
+        <div class="usecases-label">Built for any use case — plug in your model:</div>
+        <div class="usecases-tags">
+            <span class="uc-tag">🚗 Road Accidents</span>
+            <span class="uc-tag">🏗️ Construction Safety</span>
+            <span class="uc-tag">🏥 Patient Falls</span>
+            <span class="uc-tag">🦺 PPE Compliance</span>
+            <span class="uc-tag">🔒 Theft Detection</span>
+            <span class="uc-tag">🔥 Fire & Smoke</span>
+            <span class="uc-tag">👷 Crowd Monitoring</span>
+            <span class="uc-tag uc-tag--more">+ Any YOLO Model</span>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}

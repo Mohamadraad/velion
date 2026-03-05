@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Upload Video — Velion{% endblock %}
+{% block page_title %}Test Video{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/upload.css">
+{% endblock %}
+{% block content %}
+<div class="upload-page">
+  <div class="upload-layout">
+
+    <!-- LEFT — UPLOAD -->
+    <section class="upload-section">
+      <div class="section-header">
+        <h2>Upload Video for Analysis</h2>
+        <p>Supported formats: MP4, AVI, MOV, MKV, WEBM — Max 500MB</p>
+      </div>
+
+      <div class="source-tabs">
+        <button class="source-tab active" id="tabLocal" onclick="switchTab('local')">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 4v12M8 8l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Local File
+        </button>
+        <button class="source-tab" id="tabUrl" onclick="switchTab('url')">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          URL / Link
+        </button>
+      </div>
+
+      <!-- LOCAL FILE PANEL -->
+      <div class="tab-panel" id="panelLocal">
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept=".mp4,.avi,.mov,.mkv,.webm" hidden />
+          <div class="dropzone-inner" id="dropzoneInner">
+            <div class="drop-icon">
+              <svg viewBox="0 0 64 64" fill="none">
+                <path d="M32 44V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M22 30L32 20L42 30" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10 48H54" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <rect x="4" y="4" width="56" height="56" rx="8" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4"/>
+              </svg>
+            </div>
+            <p class="drop-text">Drag & drop your video here</p>
+            <p class="drop-sub">or</p>
+            <button class="btn-primary" onclick="document.getElementById('fileInput').click()">Browse File</button>
+          </div>
+          <div class="file-selected hidden" id="fileSelected">
+            <div class="file-thumb">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M15 10L19.55 7.72C19.83 7.58 20.17 7.58 20.45 7.72L21 8V16L20.45 16.28C20.17 16.42 19.83 16.42 19.55 16.28L15 14V10Z" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="7" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <div class="file-info">
+              <div class="file-name" id="selectedFileName">filename.mp4</div>
+              <div class="file-size" id="selectedFileSize">0 MB</div>
+            </div>
+            <button class="btn-remove" onclick="removeSelectedFile()">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- URL PANEL -->
+      <div class="tab-panel hidden" id="panelUrl">
+        <div class="url-box">
+          <div class="url-input-wrap">
+            <div class="url-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <input type="url" id="videoUrlInput" class="url-input"
+              placeholder="https://example.com/video.mp4"
+              oninput="handleUrlInput(this.value)"
+              autocomplete="off" spellcheck="false" />
+            <button class="btn-url-clear hidden" id="btnUrlClear" onclick="clearUrl()">✕</button>
+          </div>
+          <p class="url-hint">Paste a direct link to an MP4, AVI, MOV, MKV, or WEBM file</p>
+          <div class="url-preview hidden" id="urlPreview">
+            <div class="url-preview-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <span class="url-preview-text" id="urlPreviewText"></span>
+            <span class="url-preview-badge" id="urlPreviewBadge"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPLOAD PROGRESS -->
+      <div class="upload-progress hidden" id="uploadProgress">
+        <div class="progress-info">
+          <span id="progressLabel">Uploading...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="upload-actions">
+        <button class="btn-primary btn-analyze" id="btnAnalyze" onclick="analyzeVideo()" disabled>
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Analyze Video
+        </button>
+        <button class="btn-ghost" onclick="resetUpload()">Reset</button>
+      </div>
+
+      <!-- RECENT UPLOADS -->
+      <div class="recent-uploads">
+        <h3>Recent Uploads</h3>
+        <div class="recent-list" id="recentList">
+          <div class="recent-empty">No recent uploads in this session</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT — RESULTS -->
+    <section class="results-section">
+      <div class="section-header">
+        <h2>Analysis Results</h2>
+        <span class="results-status" id="resultsStatus">Awaiting video</span>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div class="results-empty" id="resultsEmpty">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1"/><path d="M9 12H15M12 9V15" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+        <span>Upload and analyze a video to see results</span>
+      </div>
+
+      <!-- LIVE CONTAINER -->
+      <div class="results-live hidden" id="resultsLive">
+
+        <!-- Status bar -->
+        <div class="vp-bar">
+          <span class="vp-dot" id="vpDot"></span>
+          <span class="vp-label" id="vpLabel">Analyzing…</span>
+          <span class="vp-frame-counter" id="vpFrameCounter"></span>
+        </div>
+
+        <!-- MJPEG frame — this is the cv2.imshow equivalent -->
+        <div class="vp-frame-wrap">
+          <img id="mjpegFrame" class="vp-frame" src="" alt="Analysis feed" />
+        </div>
+
+        <!-- Custom playback controls -->
+        <div class="vp-controls">
+          <button class="vpc-btn" id="btnPlayPause" onclick="togglePlayPause()" title="Play / Pause">
+            <svg id="iconPause" viewBox="0 0 24 24" fill="none">
+              <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+              <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+            </svg>
+            <svg id="iconPlay" viewBox="0 0 24 24" fill="none" class="hidden">
+              <path d="M5 4l15 8-15 8V4z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <div class="vpc-seek-wrap">
+            <input type="range" id="seekBar" class="vpc-seek" min="0" max="100" value="0"
+              oninput="onSeekInput(this.value)"
+              onchange="onSeekCommit(this.value)" />
+          </div>
+
+          <span class="vpc-time" id="vpcTime">0 / 0</span>
+        </div>
+
+        <!-- Summary cards — appear after analysis -->
+        <div class="summary-grid hidden" id="summaryGrid">
+          <div class="summary-card" id="summaryAccidents">
+            <div class="summary-num">—</div>
+            <div class="summary-label">Incidents Found</div>
+          </div>
+          <div class="summary-card" id="summaryDuration">
+            <div class="summary-num">—</div>
+            <div class="summary-label">Video Duration</div>
+          </div>
+          <div class="summary-card" id="summaryFrames">
+            <div class="summary-num">—</div>
+            <div class="summary-label">Frames Analyzed</div>
+          </div>
+            <div class="summary-card" id="summaryTime">
+          <div class="summary-num">—</div>
+          <div class="summary-label">Analysis Time</div>
+        </div>
+        </div>
+
+        <div class="incidents-list hidden" id="incidentsList"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       ANALYSIS HISTORY — full-width below grid
+  ═══════════════════════════════════════════ -->
+  <section class="history-section" id="historySection">
+    <div class="history-header">
+      <div class="history-header-left">
+        <svg viewBox="0 0 24 24" fill="none" class="history-icon">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h2>Analysis History</h2>
+        <span class="history-count-badge" id="historyCountBadge">0</span>
+      </div>
+      <button class="history-refresh-btn" onclick="loadHistory()" title="Refresh">
+        <svg viewBox="0 0 24 24" fill="none" id="refreshIcon">
+          <path d="M23 4v6h-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Empty state -->
+    <div class="history-empty" id="historyEmpty">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+      <span>No analysis history yet. Analyze a video to see results here.</span>
+    </div>
+
+    <!-- History list -->
+    <div class="history-list" id="historyList"></div>
+  </section>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     DETAIL DRAWER (slide-in from right)
+═══════════════════════════════════════════ -->
+<div class="detail-backdrop" id="detailBackdrop" onclick="closeDetail()"></div>
+<aside class="detail-drawer" id="detailDrawer">
+  <div class="detail-drawer-inner">
+    <div class="detail-drawer-topbar">
+      <div class="detail-drawer-title" id="drawerTitle">Analysis Details</div>
+      <button class="detail-close-btn" onclick="closeDetail()">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="detail-drawer-body" id="drawerBody">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</aside>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}

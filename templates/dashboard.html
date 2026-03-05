@@ -1,0 +1,700 @@
+{% extends "base.html" %}
+{% block title %}Live Streams — Velion AI{% endblock %}
+{% block page_title %}Live Streams{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+{% endblock %}
+{% block content %}
+<div class="dashboard-page">
+  <!-- NO MODEL WARNING BANNER -->
+  <div class="no-model-warning" id="noModelWarning" style="display:none;">
+  <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0;">
+    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+          stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+    <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <span>No active detection model — you can still add cameras and view streams, but <strong>no incident detection will occur</strong>. <a href="/models#library">Upload or activate a model</a> to enable detection.</span>
+</div>
+    <!-- STREAM INPUT PANEL -->
+    <section class="stream-panel">
+        <div class="panel-header">
+            <div>
+                <h2>Camera Sources</h2>
+                <p>Connect cameras — paste an RTSP/HTTP link or select a local USB / integrated camera</p>
+            </div>
+            <button class="btn-add-camera" id="btnAddCamera" onclick="addCameraSlot()">
+                <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+                    <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                Add Camera
+            </button>
+        </div>
+        <div class="stream-inputs" id="streamInputs">
+            {% for i in range(1, 5) %}
+            <div class="stream-input-row" data-index="{{ i }}" id="row-{{ i }}">
+                <div class="stream-input-label">
+                    <div class="cam-indicator" id="indicator-{{ i }}"></div>
+                    <span class="cam-tag" id="cam-tag-{{ i }}">CAM 0{{ i }}</span>
+                </div>
+                <div class="source-toggle" id="source-tabs-{{ i }}">
+                    <button class="src-pill active" data-cam="{{ i }}" data-type="url"
+                            onclick="switchSourceType({{ i }},'url')">
+                        <svg viewBox="0 0 16 16" fill="none" width="11" height="11">
+                            <path d="M1 8h14M10 2l4 6-4 6" stroke="currentColor" stroke-width="1.5"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        URL / RTSP
+                    </button>
+                    <button class="src-pill" data-cam="{{ i }}" data-type="camera"
+                            onclick="switchSourceType({{ i }},'camera')">
+                        <svg viewBox="0 0 16 16" fill="none" width="11" height="11">
+                            <rect x="1" y="4" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+                            <path d="M11 7l4-2v6l-4-2" stroke="currentColor" stroke-width="1.4"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        USB / Local
+                    </button>
+                </div>
+                <div class="source-inputs" id="url-input-{{ i }}">
+                    <input type="text" class="stream-url-input" id="stream-url-{{ i }}"
+                           placeholder="rtsp://... or http://..."
+                           autocomplete="off" spellcheck="false" />
+                </div>
+                <div class="source-inputs hidden" id="camera-input-{{ i }}">
+                    <div class="cam-picker-wrap">
+                        <button class="btn-scan-cams" id="scan-btn-{{ i }}"
+                                onclick="loadCameras({{ i }})" title="Scan for USB / integrated cameras">
+                            <span class="scan-icon-wrap">
+                                <svg class="scan-svg" viewBox="0 0 20 20" fill="none" width="15" height="15">
+                                    <circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.6"
+                                            stroke-dasharray="3 2.5" stroke-linecap="round"/>
+                                    <circle cx="10" cy="10" r="2" fill="currentColor"/>
+                                    <path d="M10 3V1M10 19v-2M3 10H1M19 10h-2" stroke="currentColor"
+                                          stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </span>
+                            <span class="scan-text">Scan Cameras</span>
+                            <span class="scan-count" id="scan-count-{{ i }}"></span>
+                        </button>
+                        <div class="cam-select-shell hidden" id="cam-shell-{{ i }}">
+                            <svg class="select-chevron" viewBox="0 0 10 6" fill="none" width="10" height="6">
+                                <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <select class="stream-device-select" id="stream-device-{{ i }}">
+                                <option value="">Select camera…</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="scan-status-msg" id="scan-status-{{ i }}"></div>
+                </div>
+                <input type="text" class="stream-label-input" id="stream-label-{{ i }}"
+                       placeholder="Label (optional)" />
+                <button class="btn-connect" data-index="{{ i }}"
+                        onclick="connectStream({{ i }})">Connect</button>
+                <button class="btn-disconnect hidden" data-index="{{ i }}"
+                        onclick="disconnectStream({{ i }})">Disconnect</button>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- STREAM VIEWER GRID -->
+    <section class="stream-viewer-section">
+        <div class="viewer-header">
+            <h2>Stream Monitor</h2>
+            <div class="viewer-controls">
+                <button class="layout-btn active" data-layout="2x2" title="2×2 Grid">
+                    <svg viewBox="0 0 16 16" fill="none">
+                        <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                        <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                        <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                        <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                    </svg>
+                </button>
+                <button class="layout-btn" data-layout="1x1" title="Single View">
+                    <svg viewBox="0 0 16 16" fill="none">
+                        <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.2"/>
+                    </svg>
+                </button>
+                <div class="cam-switcher hidden" id="camSwitcher">
+                    <!-- populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <div class="stream-grid" id="streamGrid">
+            {% for i in range(1, 5) %}
+            <div class="stream-cell" id="cell-{{ i }}">
+                <div class="cell-label">CAM 0{{ i }} <span class="cell-status">— IDLE</span></div>
+                <div class="cell-body">
+                    <div class="cell-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1"/>
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1"/>
+                            <path d="M12 3V6M12 18V21M3 12H6M18 12H21" stroke="currentColor"
+                                  stroke-width="1" stroke-linecap="round"/>
+                        </svg>
+                        <span>No stream connected</span>
+                    </div>
+                </div>
+                <div class="cell-overlay hidden" id="overlay-{{ i }}">
+                    <span class="alert-badge">⚠ EVENT DETECTED</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- ALERT LOG -->
+    <section class="alert-log-section">
+        <div class="log-header">
+            <h2>Event Log</h2>
+            <button class="btn-ghost-sm" onclick="clearAlerts()">Clear Log</button>
+        </div>
+        <div class="alert-log" id="alertLog">
+            <div class="log-empty">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span>No events — System monitoring</span>
+            </div>
+        </div>
+    </section>
+</div>
+
+{# ── slot HTML is built purely in JS via _buildSlotHTML() ── #}
+{# placeholder to keep block structure intact #}
+{% if false %}
+{% macro _render_slot(i) %}
+<div class="stream-input-row" data-index="{{ i }}" id="row-{{ i }}">
+    <div class="stream-input-label">
+        <div class="cam-indicator" id="indicator-{{ i }}"></div>
+        <span class="cam-tag" id="cam-tag-{{ i }}">CAM {{ '%02d' % i }}</span>
+    </div>
+    <div class="source-toggle" id="source-tabs-{{ i }}">
+        <button class="src-pill active" data-cam="{{ i }}" data-type="url"
+                onclick="switchSourceType({{ i }},'url')">
+            <svg viewBox="0 0 16 16" fill="none" width="11" height="11">
+                <path d="M1 8h14M10 2l4 6-4 6" stroke="currentColor" stroke-width="1.5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            URL / RTSP
+        </button>
+        <button class="src-pill" data-cam="{{ i }}" data-type="camera"
+                onclick="switchSourceType({{ i }},'camera')">
+            <svg viewBox="0 0 16 16" fill="none" width="11" height="11">
+                <rect x="1" y="4" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M11 7l4-2v6l-4-2" stroke="currentColor" stroke-width="1.4"
+                      stroke-linejoin="round"/>
+            </svg>
+            USB / Local
+        </button>
+    </div>
+    <div class="source-inputs" id="url-input-{{ i }}">
+        <input type="text" class="stream-url-input" id="stream-url-{{ i }}"
+               placeholder="rtsp://... or http://..."
+               autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="source-inputs hidden" id="camera-input-{{ i }}">
+        <div class="cam-picker-wrap">
+            <button class="btn-scan-cams" id="scan-btn-{{ i }}"
+                    onclick="loadCameras({{ i }})"
+                    title="Scan for USB / integrated cameras">
+                <span class="scan-icon-wrap">
+                    <svg class="scan-svg" viewBox="0 0 20 20" fill="none" width="15" height="15">
+                        <circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.6"
+                                stroke-dasharray="3 2.5" stroke-linecap="round"/>
+                        <circle cx="10" cy="10" r="2" fill="currentColor"/>
+                        <path d="M10 3V1M10 19v-2M3 10H1M19 10h-2" stroke="currentColor"
+                              stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span class="scan-text">Scan Cameras</span>
+                <span class="scan-count" id="scan-count-{{ i }}"></span>
+            </button>
+            <div class="cam-select-shell hidden" id="cam-shell-{{ i }}">
+                <svg class="select-chevron" viewBox="0 0 10 6" fill="none" width="10" height="6">
+                    <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <select class="stream-device-select" id="stream-device-{{ i }}">
+                    <option value="">Select camera…</option>
+                </select>
+            </div>
+        </div>
+        <div class="scan-status-msg" id="scan-status-{{ i }}"></div>
+    </div>
+    <input type="text" class="stream-label-input" id="stream-label-{{ i }}"
+           placeholder="Label (optional)" />
+    <button class="btn-connect" data-index="{{ i }}"
+            onclick="connectStream({{ i }})">Connect</button>
+    <button class="btn-disconnect hidden" data-index="{{ i }}"
+            onclick="disconnectStream({{ i }})">Disconnect</button>
+{% endmacro %}
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window._modelsPromise = fetch('/api/models').then(r => r.json());
+  setTimeout(() => { window._modelsPromise = null; }, 5000);
+/* ═══════════════════════════════════════════════════════════════
+   SLOT COUNTER
+═══════════════════════════════════════════════════════════════ */
+let _slotCounter = 4;
+const camSourceType = {};
+
+for (let i = 1; i <= 4; i++) camSourceType[i] = 'url';
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SOURCE TYPE TOGGLE
+═══════════════════════════════════════════════════════════════ */
+function switchSourceType(index, type) {
+  camSourceType[index] = type;
+
+  document.getElementById(`url-input-${index}`)
+    .classList.toggle('hidden', type !== 'url');
+  document.getElementById(`camera-input-${index}`)
+    .classList.toggle('hidden', type !== 'camera');
+
+  document.querySelectorAll(`#source-tabs-${index} .src-pill`).forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+
+  if (type === 'camera') {
+    const shell = document.getElementById(`cam-shell-${index}`);
+    if (shell?.classList.contains('hidden')) loadCameras(index);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CAMERA SCAN
+═══════════════════════════════════════════════════════════════ */
+async function loadCameras(index) {
+  const scanBtn  = document.getElementById(`scan-btn-${index}`);
+  const shell    = document.getElementById(`cam-shell-${index}`);
+  const select   = document.getElementById(`stream-device-${index}`);
+  const statusEl = document.getElementById(`scan-status-${index}`);
+  const countEl  = document.getElementById(`scan-count-${index}`);
+  if (!scanBtn) return;
+
+  scanBtn.classList.add('scanning');
+  scanBtn.classList.remove('done');
+  if (countEl) { countEl.textContent = ''; countEl.classList.remove('visible'); }
+  _setStatus(statusEl, 'Scanning for cameras…', 'inf');
+
+  try {
+    const res  = await fetch('/api/cameras');
+    const data = await res.json();
+
+    if (!data.success || !data.cameras || data.cameras.length === 0) {
+      _setStatus(statusEl, '✕  No cameras found — check USB connections', 'err');
+      if (shell) shell.classList.add('hidden');
+    } else {
+      select.innerHTML = '';
+      const available = data.cameras.filter(c => !c.in_use).length;
+
+      data.cameras.forEach(cam => {
+        const opt = document.createElement('option');
+        opt.value = cam.index;
+        if (cam.in_use) {
+          opt.textContent = `${cam.label}  —  in use on ${cam.used_by}`;
+          opt.disabled    = true;
+          opt.style.color = '#555';
+        } else {
+          opt.textContent = cam.label;
+        }
+        select.appendChild(opt);
+      });
+
+      if (shell) shell.classList.remove('hidden');
+
+      const total = data.cameras.length;
+      const msg   = available === 0
+        ? `✕  All ${total} camera${total > 1 ? 's' : ''} already in use`
+        : `✓  Found ${total} camera${total > 1 ? 's' : ''} (${available} available) — select and press Connect`;
+      _setStatus(statusEl, msg, available === 0 ? 'err' : 'ok');
+
+      if (countEl) { countEl.textContent = available; countEl.classList.add('visible'); }
+      scanBtn.classList.add('done');
+    }
+  } catch (e) {
+    _setStatus(statusEl, '✕  Network error — is the server running?', 'err');
+    if (shell) shell.classList.add('hidden');
+  } finally {
+    scanBtn.classList.remove('scanning');
+    setTimeout(() => { if (statusEl) statusEl.classList.remove('visible'); }, 6000);
+  }
+}
+
+function _setStatus(el, msg, cls) {
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `scan-status-msg visible ${cls}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADD CAMERA SLOT
+═══════════════════════════════════════════════════════════════ */
+function addCameraSlot() {
+  _slotCounter++;
+  const i = _slotCounter;
+  camSourceType[i] = 'url';
+
+  const row = document.createElement('div');
+  row.className = 'stream-input-row new-slot';
+  row.dataset.index = i;
+  row.id = `row-${i}`;
+  row.innerHTML = _buildSlotHTML(i);
+
+  document.getElementById('streamInputs').appendChild(row);
+
+  setTimeout(() => row.classList.remove('new-slot'), 300);
+
+  _addGridCell(i);
+  _rebuildCamSwitcher();
+  _updateGridClass();
+
+  showToast(`CAM ${String(i).padStart(2, '0')} slot added.`, 'info');
+}
+
+function _buildSlotHTML(i) {
+  return `
+    <div class="stream-input-label">
+      <div class="cam-indicator" id="indicator-${i}"></div>
+      <span class="cam-tag" id="cam-tag-${i}">CAM ${String(i).padStart(2,'00')}</span>
+    </div>
+    <div class="source-toggle" id="source-tabs-${i}">
+      <button type="button" class="src-pill active" data-cam="${i}" data-type="url"
+              onclick="switchSourceType(${i},'url')">
+        <svg viewBox="0 0 16 16" fill="none" width="11" height="11">
+          <path d="M1 8h14M10 2l4 6-4 6" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        URL / RTSP
+      </button>
+      <button type="button" class="src-pill" data-cam="${i}" data-type="camera"
+              onclick="switchSourceType(${i},'camera')">
+        <svg viewBox="0 0 16 16" fill="none" width="11" height="11">
+          <rect x="1" y="4" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 7l4-2v6l-4-2" stroke="currentColor" stroke-width="1.4"
+                stroke-linejoin="round"/>
+        </svg>
+        USB / Local
+      </button>
+    </div>
+    <div class="source-inputs" id="url-input-${i}">
+      <input type="text" class="stream-url-input" id="stream-url-${i}"
+             placeholder="rtsp://... or http://..."
+             autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="source-inputs hidden" id="camera-input-${i}">
+      <div class="cam-picker-wrap">
+        <button type="button" class="btn-scan-cams" id="scan-btn-${i}"
+                onclick="loadCameras(${i})" title="Scan for USB / integrated cameras">
+          <span class="scan-icon-wrap">
+            <svg class="scan-svg" viewBox="0 0 20 20" fill="none" width="15" height="15">
+              <circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.6"
+                      stroke-dasharray="3 2.5" stroke-linecap="round"/>
+              <circle cx="10" cy="10" r="2" fill="currentColor"/>
+              <path d="M10 3V1M10 19v-2M3 10H1M19 10h-2" stroke="currentColor"
+                    stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="scan-text">Scan Cameras</span>
+          <span class="scan-count" id="scan-count-${i}"></span>
+        </button>
+        <div class="cam-select-shell hidden" id="cam-shell-${i}">
+          <svg class="select-chevron" viewBox="0 0 10 6" fill="none" width="10" height="6">
+            <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <select class="stream-device-select" id="stream-device-${i}">
+            <option value="">Select camera…</option>
+          </select>
+        </div>
+      </div>
+      <div class="scan-status-msg" id="scan-status-${i}"></div>
+    </div>
+    <input type="text" class="stream-label-input" id="stream-label-${i}"
+           placeholder="Label (optional)" />
+    <button type="button" class="btn-connect" data-index="${i}"
+            onclick="connectStream(${i})">Connect</button>
+    <button type="button" class="btn-disconnect hidden" data-index="${i}"
+            onclick="disconnectStream(${i})">Disconnect</button>
+    <button type="button" class="btn-delete-slot" data-index="${i}"
+            onclick="deleteSlot(${i})" title="Remove this camera slot">
+      <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+        <path d="M2 4h12M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M6 7v5M10 7v5M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9"
+              stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  `;
+}
+
+function _addGridCell(i) {
+  const grid = document.getElementById('streamGrid');
+  const cell = document.createElement('div');
+  cell.className = 'stream-cell';
+  cell.id = `cell-${i}`;
+  cell.innerHTML = `
+    <div class="cell-label">CAM ${String(i).padStart(2,'0')} <span class="cell-status">— IDLE</span></div>
+    <div class="cell-body">
+      <div class="cell-placeholder">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1"/>
+          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1"/>
+          <path d="M12 3V6M12 18V21M3 12H6M18 12H21" stroke="currentColor"
+                stroke-width="1" stroke-linecap="round"/>
+        </svg>
+        <span>No stream connected</span>
+      </div>
+    </div>
+    <div class="cell-overlay hidden" id="overlay-${i}">
+      <span class="alert-badge">⚠ EVENT DETECTED</span>
+    </div>
+  `;
+  grid.appendChild(cell);
+
+  if (typeof velionInjectCell === 'function') velionInjectCell(i);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DELETE CAMERA SLOT
+═══════════════════════════════════════════════════════════════ */
+async function deleteSlot(index) {
+  if (connectedStreams[index]) {
+    await disconnectStream(index);
+  }
+
+  const row = document.getElementById(`row-${index}`);
+  if (row) {
+    row.style.transition = 'opacity 0.18s, transform 0.18s';
+    row.style.opacity = '0';
+    row.style.transform = 'translateY(-4px)';
+    setTimeout(() => row.remove(), 180);
+  }
+
+  const cell = document.getElementById(`cell-${index}`);
+  if (cell) {
+    cell.style.transition = 'opacity 0.18s';
+    cell.style.opacity = '0';
+    setTimeout(() => cell.remove(), 180);
+  }
+
+  delete camSourceType[index];
+
+  setTimeout(() => {
+    _rebuildCamSwitcher();
+    _updateGridClass();
+  }, 200);
+
+  showToast(`CAM ${String(index).padStart(2,'00')} slot removed.`, 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GRID CLASS UPDATER
+═══════════════════════════════════════════════════════════════ */
+function _updateGridClass() {
+  const grid  = document.getElementById('streamGrid');
+  const cells = grid.querySelectorAll('.stream-cell').length;
+  grid.className = grid.className.replace(/\bcells-\S+/g, '').trim();
+  if (cells > 4) grid.classList.add('cells-many');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CAM SWITCHER REBUILD
+═══════════════════════════════════════════════════════════════ */
+const CAM_TAB_LIMIT = 5;
+
+function _rebuildCamSwitcher() {
+  const switcher = document.getElementById('camSwitcher');
+  if (!switcher) return;
+
+  const rows    = document.querySelectorAll('.stream-input-row');
+  const indices = Array.from(rows).map(r => parseInt(r.dataset.index)).filter(Boolean);
+
+  if (!indices.includes(activeSingleCam) && indices.length > 0) {
+    activeSingleCam = indices[0];
+  }
+
+  const tabIndices      = indices.slice(0, CAM_TAB_LIMIT);
+  const overflowIndices = indices.slice(CAM_TAB_LIMIT);
+
+  const tabs = tabIndices.map(i => {
+    const isActive  = activeSingleCam === i;
+    const isLive    = !!connectedStreams[i];
+    const label     = connectedStreams[i]?.label || `CAM ${String(i).padStart(2,'00')}`;
+    return `<button class="cam-switch-btn ${isActive ? 'active' : ''} ${isLive ? 'is-live' : ''}"
+              data-cam="${i}" onclick="switchSingleCam(${i})" title="${label}">
+              CAM ${String(i).padStart(2,'00')}
+            </button>`;
+  }).join('');
+
+  let dropdown = '';
+  if (overflowIndices.length > 0) {
+    const activeInOverflow = overflowIndices.includes(activeSingleCam);
+    const options = overflowIndices.map(i => {
+      const isLive  = !!connectedStreams[i];
+      const label   = connectedStreams[i]?.label || `CAM ${String(i).padStart(2,'00')}`;
+      const dot     = isLive ? ' ●' : '';
+      const sel     = activeSingleCam === i ? 'selected' : '';
+      return `<option value="${i}" ${sel}>${label}${dot}</option>`;
+    }).join('');
+
+    dropdown = `
+      <div class="cam-switcher-dropdown" title="More cameras">
+        <select onchange="switchSingleCam(parseInt(this.value))"
+                class="${activeInOverflow ? 'cam-switcher-dropdown-active' : ''}">
+          <option value="" disabled ${!activeInOverflow ? 'selected' : ''}>More…</option>
+          ${options}
+        </select>
+        <svg viewBox="0 0 10 6" fill="none" width="9" height="9">
+          <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>`;
+  }
+
+  switcher.innerHTML = tabs + dropdown;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONNECT ROUTER
+═══════════════════════════════════════════════════════════════ */
+function connectStream(index) {
+  const type  = camSourceType[index] || 'url';
+  const label = (document.getElementById(`stream-label-${index}`)?.value || '').trim()
+             || `CAM ${String(index).padStart(2,'00')}`;
+
+  if (type === 'camera') {
+    _connectCamera(index, label);
+  } else {
+    _connectUrl(index, label);
+  }
+}
+
+async function _connectUrl(index, label) {
+  const urlEl = document.getElementById(`stream-url-${index}`);
+  const url   = (urlEl?.value || '').trim();
+  if (!url) { _toast('Please enter a stream URL', 'error'); urlEl?.focus(); return; }
+  if (!/^(rtsp|http|https):\/\//i.test(url)) {
+    _toast('URL must start with rtsp://, http://, or https://', 'error'); return;
+  }
+  // Pass slot: index so the server records which slot this belongs to
+  await _doConnect(index, '/api/add-stream', { url, label, slot: index });
+}
+
+async function _connectCamera(index, label) {
+  const shell = document.getElementById(`cam-shell-${index}`);
+  if (!shell || shell.classList.contains('hidden')) {
+    _toast('Please scan for cameras first', 'error'); return;
+  }
+  const select       = document.getElementById(`stream-device-${index}`);
+  const device_index = select ? parseInt(select.value) : NaN;
+  if (isNaN(device_index) || select.value === '') {
+    _toast('Please select a camera from the dropdown', 'error'); return;
+  }
+  await _doConnect(index, '/api/add-camera', { device_index, label, slot: index });
+}
+
+async function _doConnect(index, endpoint, body) {
+  const connectBtn = document.querySelector(`.btn-connect[data-index="${index}"]`);
+  if (connectBtn) { connectBtn.textContent = 'Connecting…'; connectBtn.disabled = true; }
+
+  try {
+    const res  = await fetch(endpoint, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      _onConnected(index, data.stream_id, body.label || `CAM ${String(index).padStart(2,'00')}`);
+    } else {
+      _toast(data.message || 'Connection failed', 'error');
+      if (connectBtn) { connectBtn.textContent = 'Connect'; connectBtn.disabled = false; }
+    }
+  } catch (e) {
+    _toast('Network error — check server', 'error');
+    if (connectBtn) { connectBtn.textContent = 'Connect'; connectBtn.disabled = false; }
+  }
+}
+
+function _onConnected(index, streamId, label) {
+  window[`streamId_${index}`] = streamId;
+
+  const connectBtn = document.querySelector(`.btn-connect[data-index="${index}"]`);
+  const discBtn    = document.querySelector(`.btn-disconnect[data-index="${index}"]`);
+
+  connectBtn?.classList.add('hidden');
+  discBtn?.classList.remove('hidden');
+  document.getElementById(`indicator-${index}`)?.classList.add('active');
+
+  const urlEl   = document.getElementById(`stream-url-${index}`);
+  const labelEl = document.getElementById(`stream-label-${index}`);
+  const select  = document.getElementById(`stream-device-${index}`);
+  const scanBtn = document.getElementById(`scan-btn-${index}`);
+  if (urlEl)   urlEl.readOnly   = true;
+  if (labelEl) labelEl.readOnly = true;
+  if (select)  select.disabled  = true;
+  if (scanBtn) scanBtn.disabled = true;
+
+  const delBtn = document.querySelector(`.btn-delete-slot[data-index="${index}"]`);
+  if (delBtn) delBtn.disabled = true;
+
+  const cell = document.getElementById(`cell-${index}`);
+  if (cell) {
+    const body = cell.querySelector('.cell-body');
+    if (body) body.innerHTML =
+      `<img src="/video-feed/${streamId}"
+            style="width:100%;height:100%;object-fit:cover;display:block;" />`;
+    const st = cell.querySelector('.cell-status');
+    if (st) st.textContent = '— LIVE';
+  }
+
+  _rebuildCamSwitcher();
+
+  if (typeof connectedStreams !== 'undefined') {
+    connectedStreams[index] = { id: streamId, label, url: '' };
+    lastIncidentCounts[streamId] = 0;
+  }
+
+  if (typeof velionOnStreamConnected === 'function') velionOnStreamConnected(index);
+
+  if (typeof showToast === 'function')
+    showToast(`${label} connected — monitoring active.`, 'success');
+  if (typeof updateStreamCountBadge === 'function')
+    updateStreamCountBadge(Object.keys(connectedStreams).length);
+}
+/* ═══════════════════════════════════════════════════════════════
+   FALLBACK TOAST
+═══════════════════════════════════════════════════════════════ */
+function _toast(msg, type) {
+  if (typeof showToast === 'function') { showToast(msg, type); return; }
+  if (type === 'error') alert(msg);
+}
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard_analytics.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => { _rebuildCamSwitcher(); _updateGridClass(); }, 600);
+  });
+
+(async () => {
+  try {
+    const data = await (window._modelsPromise || fetch('/api/models').then(r => r.json()));
+    if (data.success && !(data.models || []).some(m => m.active)) {
+      document.getElementById('noModelWarning').style.display = 'flex';
+    }
+  } catch (_) {}
+})();
+</script>
+{% endblock %}

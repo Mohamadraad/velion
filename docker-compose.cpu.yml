@@ -1,0 +1,44 @@
+name: velion-cpu
+
+# ─────────────────────────────────────────────────────────────────────
+#  ⚠️  CPU Mode — Performance Warning
+#  Inference on CPU is significantly slower than on a GPU.
+#  For best results in CPU mode:
+#    • Use only 1–2 camera streams
+#    • Lower inference resolution in Settings (e.g. 320×320)
+#    • Use a lightweight model (YOLOv8n or YOLOv8s)
+# ─────────────────────────────────────────────────────────────────────
+
+services:
+  velion:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    image: velion:cpu
+    container_name: velion-cpu
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - velion_models:/app/models
+      - velion_uploads:/app/uploads
+      - velion_exports:/app/exports
+      - velion_recordings:/app/recordings
+      - velion_data:/app/data
+    # ── USB camera access ──────────────────────────────────────────────
+    # Gives the container access to ALL /dev/video* devices automatically.
+    # No need to list individual cameras — plug in any USB camera and
+    # click "Scan Cameras" in the dashboard.
+    #
+    # Safe for self-hosted / local use.
+    # Remove these two lines if you only use IP cameras (RTSP/HTTP).
+    privileged: true
+    group_add:
+      - video
+
+volumes:
+  velion_models:
+  velion_uploads:
+  velion_exports:
+  velion_recordings:
+  velion_data:

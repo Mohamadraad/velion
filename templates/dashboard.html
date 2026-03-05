@@ -276,6 +276,11 @@ function switchSourceType(index, type) {
 /* ═══════════════════════════════════════════════════════════════
    CAMERA SCAN
 ═══════════════════════════════════════════════════════════════ */
+// ─────────────────────────────────────────────────────────────────────
+// Replace the loadCameras() function in dashboard.html with this version.
+// The only change is reading data.hint and showing a Docker-specific message.
+// ─────────────────────────────────────────────────────────────────────
+
 async function loadCameras(index) {
   const scanBtn  = document.getElementById(`scan-btn-${index}`);
   const shell    = document.getElementById(`cam-shell-${index}`);
@@ -294,42 +299,52 @@ async function loadCameras(index) {
     const data = await res.json();
 
     if (!data.success || !data.cameras || data.cameras.length === 0) {
-      _setStatus(statusEl, '✕  No cameras found — check USB connections', 'err');
+      // Check if the server told us WHY (Docker device access issue)
+      let errMsg = '✕  No cameras found — check USB connections';
+      if (data.hint && data.hint.includes('docker_no_devices')) {
+        errMsg = '✕  Running in Docker — add "privileged: true" to docker-compose.yml and restart';
+      } else if (data.hint && data.hint.includes('no_cameras')) {
+        errMsg = '✕  No USB cameras detected. For IP cameras use the URL / RTSP tab instead.';
+      }
+      _setStatus(statusEl, errMsg, 'err');
       if (shell) shell.classList.add('hidden');
-    } else {
-      select.innerHTML = '';
-      const available = data.cameras.filter(c => !c.in_use).length;
-
-      data.cameras.forEach(cam => {
-        const opt = document.createElement('option');
-        opt.value = cam.index;
-        if (cam.in_use) {
-          opt.textContent = `${cam.label}  —  in use on ${cam.used_by}`;
-          opt.disabled    = true;
-          opt.style.color = '#555';
-        } else {
-          opt.textContent = cam.label;
-        }
-        select.appendChild(opt);
-      });
-
-      if (shell) shell.classList.remove('hidden');
-
-      const total = data.cameras.length;
-      const msg   = available === 0
-        ? `✕  All ${total} camera${total > 1 ? 's' : ''} already in use`
-        : `✓  Found ${total} camera${total > 1 ? 's' : ''} (${available} available) — select and press Connect`;
-      _setStatus(statusEl, msg, available === 0 ? 'err' : 'ok');
-
-      if (countEl) { countEl.textContent = available; countEl.classList.add('visible'); }
-      scanBtn.classList.add('done');
+      return;
     }
+
+    // ── Cameras found — populate the dropdown ─────────────────────────
+    select.innerHTML = '';
+    const available = data.cameras.filter(c => !c.in_use).length;
+
+    data.cameras.forEach(cam => {
+      const opt = document.createElement('option');
+      opt.value = cam.index;
+      if (cam.in_use) {
+        opt.textContent = `${cam.label}  —  in use on ${cam.used_by}`;
+        opt.disabled    = true;
+        opt.style.color = '#555';
+      } else {
+        opt.textContent = cam.label;
+      }
+      select.appendChild(opt);
+    });
+
+    if (shell) shell.classList.remove('hidden');
+
+    const total = data.cameras.length;
+    const msg   = available === 0
+      ? `✕  All ${total} camera${total > 1 ? 's' : ''} already in use`
+      : `✓  Found ${total} camera${total > 1 ? 's' : ''} (${available} available) — select and press Connect`;
+    _setStatus(statusEl, msg, available === 0 ? 'err' : 'ok');
+
+    if (countEl) { countEl.textContent = available; countEl.classList.add('visible'); }
+    scanBtn.classList.add('done');
+
   } catch (e) {
     _setStatus(statusEl, '✕  Network error — is the server running?', 'err');
     if (shell) shell.classList.add('hidden');
   } finally {
     scanBtn.classList.remove('scanning');
-    setTimeout(() => { if (statusEl) statusEl.classList.remove('visible'); }, 6000);
+    setTimeout(() => { if (statusEl) statusEl.classList.remove('visible'); }, 8000);
   }
 }
 

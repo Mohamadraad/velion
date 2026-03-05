@@ -276,7 +276,71 @@ def upload_video_url():
 @app.route('/api/cameras')
 def api_list_cameras():
     cameras = list_cameras()
+    
+    if not cameras:
+        import os, platform
+        in_docker = os.path.exists('/.dockerenv')
+        system    = platform.system()
+        
+        if in_docker and system == 'Linux':
+            from pathlib import Path
+            dev_videos = list(Path('/dev').glob('video*'))
+            if not dev_videos:
+                hint = ('docker_no_devices'
+                        ' — no /dev/video* found inside container.'
+                        ' Add "privileged: true" and "group_add: [video]"'
+                        ' to docker-compose.yml and restart.')
+            else:
+                hint = 'scan_failed — devices exist but could not be opened'
+        elif system == 'Linux':
+            hint = 'no_cameras — no video devices found on this Linux host'
+        else:
+            hint = 'no_cameras'
+        
+        return jsonify({'success': True, 'cameras': [], 'hint': hint})
+    
     return jsonify({'success': True, 'cameras': cameras})
+
+
+@app.route('/api/cameras/debug')
+def api_cameras_debug():
+    """Returns raw device info — useful for diagnosing Docker camera issues."""
+    import os, platform
+    from pathlib import Path
+    
+    system    = platform.system()
+    in_docker = os.path.exists('/.dockerenv')
+    
+    dev_videos = []
+    if system == 'Linux':
+        dev_videos = [str(p) for p in sorted(Path('/dev').glob('video*'))]
+    
+    opencv_probe = []
+    for path in dev_videos:
+        try:
+            idx = int(path.replace('/dev/video', ''))
+            cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
+            opened = cap.isOpened()
+            if opened:
+                ok, _ = cap.read()
+                opencv_probe.append({'index': idx, 'path': path, 'opened': True, 'readable': ok})
+            else:
+                opencv_probe.append({'index': idx, 'path': path, 'opened': False, 'readable': False})
+            cap.release()
+        except Exception as e:
+            opencv_probe.append({'index': idx, 'path': path, 'error': str(e)})
+    
+    return jsonify({
+        'success':     True,
+        'system':      system,
+        'in_docker':   in_docker,
+        'dev_videos':  dev_videos,
+        'opencv_probe': opencv_probe,
+        'privileged_hint': (
+            'If dev_videos is empty while running in Docker, add '
+            '"privileged: true" and "group_add: [video]" to docker-compose.yml'
+        ) if in_docker and not dev_videos else None,
+    })
 
 
 @app.route('/api/add-stream', methods=['POST'])

@@ -11,7 +11,6 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # Persist user data outside the container
       - velion_models:/app/models
       - velion_uploads:/app/uploads
       - velion_exports:/app/exports
@@ -22,16 +21,17 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1           # Use 1 GPU; set to "all" for multi-GPU hosts
+              count: 1
               capabilities: [gpu]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
-    # Allow USB cameras to be passed into the container
-    # Uncomment and adjust device paths for your system:
-    # devices:
-    #   - /dev/video0:/dev/video0
-    #   - /dev/video1:/dev/video1
+    # ── USB camera access ──────────────────────────────────────────────
+    # Gives the container access to ALL /dev/video* devices automatically.
+    # Remove these two lines if you only use IP cameras (RTSP/HTTP).
+    privileged: true
+    group_add:
+      - video
 
 volumes:
   velion_models:

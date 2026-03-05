@@ -26,10 +26,10 @@
 
   <line x1="52" y1="56" x2="70" y2="132" stroke="rgba(255,120,120,0.2)" stroke-width="1.5"/>
 
-  <path d="M36 60 L36 48 L48 48" fill="none" stroke="#2a3347" stroke-width="1.2" stroke-linecap="square"/>
-  <path d="M144 60 L144 48 L132 48" fill="none" stroke="#2a3347" stroke-width="1.2" stroke-linecap="square"/>
-  <path d="M36 136 L36 148 L48 148" fill="none" stroke="#2a3347" stroke-width="1.2" stroke-linecap="square"/>
-  <path d="M144 136 L144 148 L132 148" fill="none" stroke="#2a3347" stroke-width="1.2" stroke-linecap="square"/>
+  <path d="M36 60 L36 48 L48 48" fill="none" stroke="#6a7a9a" stroke-width="1.2" stroke-linecap="square"/>
+  <path d="M144 60 L144 48 L132 48" fill="none" stroke="#6a7a9a" stroke-width="1.2" stroke-linecap="square"/>
+  <path d="M36 136 L36 148 L48 148" fill="none" stroke="#6a7a9a" stroke-width="1.2" stroke-linecap="square"/>
+  <path d="M144 136 L144 148 L132 148" fill="none" stroke="#6a7a9a" stroke-width="1.2" stroke-linecap="square"/>
 
   <text
     x="170"
@@ -40,7 +40,7 @@
     letter-spacing="12"
     fill="url(#wordFill)">VELION</text>
 
-  <line x1="532" y1="76" x2="532" y2="120" stroke="#2a3347" stroke-width="1.4"/>
+  <line x1="532" y1="76" x2="532" y2="120" stroke="#6a7a9a" stroke-width="1.4"/>
 
   <text
     x="544"
@@ -62,7 +62,7 @@
     font-family="'Courier New', monospace"
     font-size="9.5"
     letter-spacing="6"
-    fill="#2e3a52">SAFETY · INTELLIGENCE · PLATFORM</text>
+    fill="#6a7a9a">SAFETY · INTELLIGENCE · PLATFORM</text>
 
   <g transform="translate(170, 165)" opacity="0.45">
     <rect x="0"   y="0" width="62" height="17" rx="8.5" fill="none" stroke="#1e2838" stroke-width="1"/>

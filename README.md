@@ -1,6 +1,7 @@
 <div align="center">
   <img src="logo.svg" alt="Velion" width="600"/>
 </div>
+
 # Velion — AI Surveillance Platform
 
 Velion is an intelligent surveillance platform that uses pluggable computer vision models (YOLO, ONNX) to monitor live camera streams and uploaded video footage for real-time event detection.

@@ -16,6 +16,7 @@ from analysis_jobs import (
     analysis_jobs, jobs_lock,
     mjpeg_generator, start_analysis_job,
 )
+import cv2
 from stream_manager import (
     active_streams, streams_lock,
     stream_mjpeg_generator,

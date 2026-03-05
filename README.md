@@ -1,3 +1,6 @@
+<div align="center">
+  <img src="logo.svg" alt="Velion" width="600"/>
+</div>
 # Velion — AI Surveillance Platform
 
 Velion is an intelligent surveillance platform that uses pluggable computer vision models (YOLO, ONNX) to monitor live camera streams and uploaded video footage for real-time event detection.
@@ -58,7 +61,7 @@ Download from [https://docs.docker.com/get-docker/](https://docs.docker.com/get-
 
 ### 2. Clone and start
 ```bash
-git clone https://github.com/YOUR_USERNAME/velion.git
+git clone https://github.com/Mohamadraad/velion.git
 cd velion
 docker compose up -d
 ```
